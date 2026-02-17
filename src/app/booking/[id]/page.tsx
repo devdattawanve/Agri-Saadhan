@@ -1,23 +1,17 @@
 "use client";
-import { equipmentData } from "@/lib/data";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { notFound, useRouter, useSearchParams } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, CheckCircle2, CircleDashed } from "lucide-react";
+import { Upload, CheckCircle2, CircleDashed, Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { collection } from "firebase/firestore";
-import { useState } from "react";
+import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
+import { collection, doc, serverTimestamp } from "firebase/firestore";
+import type { Equipment } from "@/lib/data";
 
 export default function BookingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -25,46 +19,49 @@ export default function BookingPage({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+
   const [paymentOption, setPaymentOption] = useState("pay_on_delivery");
   const [loading, setLoading] = useState(false);
 
   const beneficiaryId = searchParams.get('beneficiaryId');
   const isSahayakBooking = !!beneficiaryId;
 
-  const equipment = equipmentData.find((e) => e.id === params.id);
+  const equipmentDocRef = useMemoFirebase(() => {
+    if (!firestore || !params.id) return null;
+    return doc(firestore, 'equipment', params.id);
+  }, [firestore, params.id]);
 
-  if (!equipment) {
-    notFound();
-  }
+  const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
 
   const handleConfirmBooking = async () => {
     if (!user) {
         toast({ variant: "destructive", title: "You must be logged in to book."});
         return;
     }
+    if (!equipment) {
+        toast({ variant: "destructive", title: "Equipment data not loaded."});
+        return;
+    }
     setLoading(true);
     
     const bookingData = {
         equipmentId: equipment.id,
-        ownerId: "owner_placeholder_id", // This should be dynamic based on equipment owner
+        ownerId: equipment.ownerId, 
         driverId: null, // Placeholder
         
-        // Core booking logic
         createdBy: user.uid,
         beneficiary: isSahayakBooking ? beneficiaryId : user.uid,
         commissionEligible: isSahayakBooking,
         sahayakId: isSahayakBooking ? user.uid : null,
 
-        // Status and financials
         status: 'pending',
         paymentStatus: paymentOption.toUpperCase(),
         totalAmount: equipment.price.amount,
-        sahayakCommission: 0, // To be calculated later
-        platformFee: 0, // To be calculated later
+        sahayakCommission: 0, 
+        platformFee: 0, 
         
-        // Timestamps
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
     };
 
     try {
@@ -89,6 +86,28 @@ export default function BookingPage({ params }: { params: { id: string } }) {
     }
   }
 
+  if (isEquipmentLoading) {
+      return (
+          <div className="container mx-auto py-8 max-w-4xl">
+              <Skeleton className="h-10 w-2/3 mb-6" />
+              <div className="grid md:grid-cols-2 gap-8">
+                  <div>
+                      <Skeleton className="h-24 w-full mb-8" />
+                      <Skeleton className="h-48 w-full" />
+                  </div>
+                  <div>
+                      <Skeleton className="h-64 w-full" />
+                  </div>
+              </div>
+              <Skeleton className="h-12 w-full max-w-md mx-auto mt-8" />
+          </div>
+      )
+  }
+
+  if (!equipment) {
+      notFound();
+  }
+
   return (
     <div className="container mx-auto py-8 max-w-4xl">
         <h1 className="text-3xl font-bold font-headline mb-2">Confirm Your Booking</h1>
@@ -97,7 +116,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
             <div>
                 <Card>
                     <CardHeader className="flex flex-row items-start gap-4">
-                        <Image src={equipment.image.imageUrl} alt={equipment.name} width={80} height={60} className="rounded-lg object-cover" />
+                        <Image src={equipment.imageUrl} alt={equipment.name} width={80} height={60} className="rounded-lg object-cover" />
                         <div>
                             <CardTitle className="font-headline">{equipment.name}</CardTitle>
                             <CardDescription>Price: ₹{equipment.price.amount}/{equipment.price.unit}</CardDescription>
@@ -158,6 +177,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
         </div>
         <div className="mt-8 text-center">
             <Button size="lg" className="w-full max-w-md bg-primary hover:bg-primary/90" onClick={handleConfirmBooking} disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {loading ? "Confirming..." : "Confirm Booking"}
             </Button>
         </div>

@@ -22,17 +22,20 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
     ? `/equipment/${equipment.id}?beneficiaryId=${beneficiaryId}`
     : `/equipment/${equipment.id}`;
 
+  // Fallback for owner name if not available
+  const ownerName = equipment.owner || "Owner";
+
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
       <Link href={linkHref}>
         <div className="relative">
           <Image
-            src={equipment.image.imageUrl}
-            alt={equipment.image.description}
+            src={equipment.imageUrl}
+            alt={equipment.name}
             width={600}
             height={400}
             className="w-full h-48 object-cover"
-            data-ai-hint={equipment.image.imageHint}
+            data-ai-hint={equipment.imageHint}
           />
           {equipment.verified && (
             <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-accent/80 px-2 py-1 text-xs font-bold text-accent-foreground backdrop-blur-sm">
@@ -45,7 +48,7 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
       <CardHeader>
         <CardTitle className="font-headline">{equipment.name}</CardTitle>
         <CardDescription>
-          Owner: {equipment.owner} ({equipment.village})
+          By {ownerName} ({equipment.village})
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -54,12 +57,14 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
                 ₹{equipment.price.amount}
                 <span className="text-sm font-normal">/{equipment.price.unit}</span>
             </span>
-            <Badge variant="secondary" className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>~{equipment.travelTime} mins away</span>
-            </Badge>
+            {equipment.travelTime && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>~{equipment.travelTime} mins away</span>
+                </Badge>
+            )}
         </div>
-        <p className="text-sm">{equipment.distance} km from your location</p>
+        {equipment.distance && <p className="text-sm">{equipment.distance} km from your location</p>}
       </CardContent>
       <CardFooter className="mt-auto">
          <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild>

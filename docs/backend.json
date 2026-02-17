@@ -91,18 +91,62 @@
       "type": "object",
       "description": "Represents a piece of agricultural equipment available for rental.",
       "properties": {
-        "id": {
-          "type": "string"
-        },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "The name or model of the equipment."
+        },
+        "type": {
+          "type": "string",
+          "description": "The category of the equipment.",
+          "enum": [
+            "Tractor",
+            "Rotavator",
+            "Plow",
+            "Harvester",
+            "Sprayer",
+            "General Farm Equipment"
+          ]
         },
         "ownerId": {
-          "type": "string"
+          "type": "string",
+          "description": "The UID of the user who owns this equipment."
+        },
+        "village": {
+          "type": "string",
+          "description": "The village where the equipment is located."
+        },
+        "price": {
+          "type": "object",
+          "description": "The rental price of the equipment.",
+          "properties": {
+            "amount": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "hour",
+                "day",
+                "acre"
+              ]
+            }
+          },
+          "required": [
+            "amount",
+            "unit"
+          ]
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the equipment is verified by the Gram Panchayat. Defaults to false."
         },
         "availabilityStatus": {
-            "type": "string",
-            "enum": ["available", "maintenance"]
+          "type": "string",
+          "description": "The current availability of the equipment.",
+          "enum": [
+            "available",
+            "maintenance"
+          ]
         },
         "geohash": {
           "type": "string",
@@ -113,13 +157,26 @@
         },
         "longitude": {
           "type": "number"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of a placeholder or uploaded image for the equipment."
+        },
+        "imageHint": {
+          "type": "string",
+          "description": "A hint for AI-powered image search or generation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
-        "id",
         "name",
+        "type",
         "ownerId",
-        "geohash",
+        "price",
+        "village",
         "availabilityStatus"
       ]
     },
