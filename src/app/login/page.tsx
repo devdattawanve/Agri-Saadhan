@@ -57,12 +57,12 @@ export default function LoginPage() {
     // This effect sets up the reCAPTCHA verifier
     useEffect(() => {
         if (auth && !window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 'size': 'invisible',
                 'callback': () => {
                     // reCAPTCHA solved, allow signInWithPhoneNumber.
                 }
-            }, auth);
+            });
         }
     }, [auth]);
 
