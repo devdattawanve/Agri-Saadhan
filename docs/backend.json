@@ -52,6 +52,10 @@
             "type": "number",
             "description": "The commission rate for a Sahayak, if applicable."
         },
+        "farmSizeInAcres": {
+          "type": "number",
+          "description": "The size of the user's farm in acres. Applicable only if the role is FARMER."
+        },
         "latitude": {
             "type": "number"
         },

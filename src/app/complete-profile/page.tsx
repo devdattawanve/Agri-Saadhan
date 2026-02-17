@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/agri/logo";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { MapPin } from "lucide-react";
 
 const availableRoles = [
   { id: 'FARMER', label: 'Farmer' },
@@ -27,7 +28,26 @@ export default function CompleteProfilePage() {
     const [name, setName] = useState("");
     const [location, setLocation] = useState("");
     const [roles, setRoles] = useState<string[]>(['FARMER']);
+    const [farmSize, setFarmSize] = useState("");
+    const [detectedCoords, setDetectedCoords] = useState<{lat: number, lng: number} | null>(null);
     const [loading, setLoading] = useState(false);
+
+    const handleDetectLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                setDetectedCoords({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                });
+                toast({ title: "Location Detected!", description: "Your current location has been captured." });
+            }, error => {
+                toast({ variant: "destructive", title: "Location Error", description: "Could not get your location. Please enter it manually."});
+                console.error("Geolocation error:", error);
+            });
+        } else {
+            toast({ variant: "destructive", title: "Unsupported", description: "Your browser does not support location detection."});
+        }
+    }
 
     const handleGetStarted = async () => {
         if (!user || !name || !location || roles.length === 0) {
@@ -35,6 +55,15 @@ export default function CompleteProfilePage() {
                 variant: "destructive",
                 title: "Missing Information",
                 description: "Please fill out all fields and select at least one role.",
+            });
+            return;
+        }
+
+        if (roles.includes('FARMER') && !farmSize) {
+             toast({
+                variant: "destructive",
+                title: "Missing Information",
+                description: "Please enter your farm size.",
             });
             return;
         }
@@ -52,9 +81,10 @@ export default function CompleteProfilePage() {
                 roles: roles,
                 sahayakStatus: isSahayak ? 'PENDING' : 'NONE',
                 commissionRate: isSahayak ? 0.05 : 0, // Default 5% commission for sahayaks
-                latitude: 28.6139, // Mock Lat for Delhi
-                longitude: 77.2090, // Mock Lng for Delhi
-                geohash: "ttnqq", // Mock geohash
+                farmSizeInAcres: roles.includes('FARMER') ? Number(farmSize) : null,
+                latitude: detectedCoords?.lat || 28.6139, // Use detected or mock Lat for Delhi
+                longitude: detectedCoords?.lng || 77.2090, // Use detected or mock Lng for Delhi
+                geohash: "ttnqq", // Mock geohash - in a real app, this would be calculated from lat/lng
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
@@ -99,12 +129,19 @@ export default function CompleteProfilePage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="location">Village / Tehsil</Label>
-                        <Input 
-                            id="location" 
-                            placeholder="e.g. Rampur, Hisar"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                        />
+                        <div className="flex gap-2">
+                            <Input 
+                                id="location" 
+                                placeholder="e.g. Rampur, Hisar"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                className="flex-grow"
+                            />
+                            <Button variant="outline" size="icon" onClick={handleDetectLocation} aria-label="Detect Location">
+                                <MapPin className="h-4 w-4" />
+                            </Button>
+                        </div>
+                         {detectedCoords && <p className="text-xs text-muted-foreground">Location captured: {detectedCoords.lat.toFixed(4)}, {detectedCoords.lng.toFixed(4)}</p>}
                     </div>
                     <div className="space-y-4">
                         <Label>I am a...</Label>
@@ -127,6 +164,20 @@ export default function CompleteProfilePage() {
                             ))}
                         </div>
                     </div>
+
+                    {roles.includes('FARMER') && (
+                        <div className="space-y-2">
+                            <Label htmlFor="farm-size">Farm Size (in Acres)</Label>
+                            <Input
+                                id="farm-size"
+                                type="number"
+                                placeholder="e.g. 10"
+                                value={farmSize}
+                                onChange={(e) => setFarmSize(e.target.value)}
+                            />
+                        </div>
+                    )}
+
                     <Button 
                         className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
                         onClick={handleGetStarted}
