@@ -81,11 +81,11 @@ export default function CompleteProfilePage() {
             return;
         }
 
-        if (roles.includes('FARMER') && !farmSize) {
+        if (roles.includes('FARMER') && (!farmSize || Number(farmSize) <= 0)) {
              toast({
                 variant: "destructive",
-                title: "Missing Information",
-                description: "Please enter your farm size.",
+                title: "Invalid Farm Size",
+                description: "Please enter a farm size greater than 0.",
             });
             return;
         }
@@ -196,6 +196,8 @@ export default function CompleteProfilePage() {
                                 placeholder="e.g. 10"
                                 value={farmSize}
                                 onChange={(e) => setFarmSize(e.target.value)}
+                                min="0.1"
+                                step="0.1"
                             />
                         </div>
                     )}
