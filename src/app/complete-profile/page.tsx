@@ -27,7 +27,7 @@ export default function CompleteProfilePage() {
     const { toast } = useToast();
     const [name, setName] = useState("");
     const [location, setLocation] = useState("");
-    const [roles, setRoles] = useState<string[]>(['FARMER']);
+    const [roles, setRoles] = useState<string[]>([]);
     const [farmSize, setFarmSize] = useState("");
     const [detectedCoords, setDetectedCoords] = useState<{lat: number, lng: number} | null>(null);
     const [loading, setLoading] = useState(false);
