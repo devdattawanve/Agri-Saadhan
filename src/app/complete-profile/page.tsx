@@ -51,6 +51,10 @@ export default function CompleteProfilePage() {
                 preferredLanguage: 'en', // default language
                 roles: roles,
                 sahayakStatus: isSahayak ? 'PENDING' : 'NONE',
+                commissionRate: isSahayak ? 0.05 : 0, // Default 5% commission for sahayaks
+                latitude: 28.6139, // Mock Lat for Delhi
+                longitude: 77.2090, // Mock Lng for Delhi
+                geohash: "ttnqq", // Mock geohash
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };

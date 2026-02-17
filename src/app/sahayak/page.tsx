@@ -1,37 +1,64 @@
+"use client";
+
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useFirestore, useCollection } from "@/firebase";
+import { collection } from "firebase/firestore";
+import Link from "next/link";
+import { User } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SahayakPage() {
+    const firestore = useFirestore();
+    const usersColRef = collection(firestore, 'users');
+    const { data: users, isLoading } = useCollection(usersColRef);
+
     return (
         <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2">
                 <Card>
                     <CardHeader>
                         <CardTitle className="font-headline">Book for a Farmer</CardTitle>
-                        <CardDescription>Select a farmer from your list or add a new one.</CardDescription>
+                        <CardDescription>Select a farmer from the list below to start a booking on their behalf.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="farmer-phone">Farmer's Mobile Number</Label>
-                            <Input id="farmer-phone" placeholder="Enter 10-digit mobile number" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="farmer-name">Farmer's Name</Label>
-                            <Input id="farmer-name" placeholder="Enter farmer's full name" />
+                        <div className="border rounded-md">
+                            <div className="divide-y">
+                                {isLoading && (
+                                    <>
+                                        <Skeleton className="h-16 w-full" />
+                                        <Skeleton className="h-16 w-full" />
+                                        <Skeleton className="h-16 w-full" />
+                                    </>
+                                )}
+                                {users && users.map(farmer => (
+                                    <div key={farmer.id} className="flex items-center justify-between p-4">
+                                        <div>
+                                            <p className="font-semibold">{farmer.name}</p>
+                                            <p className="text-sm text-muted-foreground">{farmer.villageTehsil} - {farmer.contactPhoneNumber}</p>
+                                        </div>
+                                        <Button asChild>
+                                            <Link href={`/dashboard?beneficiaryId=${farmer.id}`}>
+                                                Book for this Farmer
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                ))}
+                                {users && users.length === 0 && !isLoading && (
+                                    <div className="p-4 text-center text-muted-foreground">
+                                        No other users found. Once other farmers sign up, they will appear here.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </CardContent>
-                    <CardFooter>
-                        <Button className="bg-accent hover:bg-accent/90">Find Equipment</Button>
-                    </CardFooter>
                 </Card>
             </div>
             <div>

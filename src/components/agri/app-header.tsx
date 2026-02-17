@@ -10,14 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useAuth, useUser, useDoc, useFirestore } from "@/firebase";
+import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 const pageTitles: { [key: string]: string } = {
   "/dashboard": "Farmer Dashboard",
@@ -31,22 +31,28 @@ const pageTitles: { [key: string]: string } = {
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useAuth();
   const firestore = useFirestore();
   const { user } = useUser();
   
-  const userDocRef = useMemo(() => {
+  const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
   const { data: userData } = useDoc(userDocRef);
+  
+  const beneficiaryId = searchParams.get('beneficiaryId');
+  const isWorkMode = !!beneficiaryId;
 
   const isSahayakVerified = userData?.sahayakStatus === 'VERIFIED';
   
-  const title = Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/') 
-    ? pageTitles[Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/')!] 
-    : "Agri Saadhan";
+  const title = isWorkMode 
+    ? "Booking for Farmer" 
+    : Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/') 
+      ? pageTitles[Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/')!] 
+      : "Agri Saadhan";
 
 
   const handleLogout = async () => {
@@ -56,39 +62,53 @@ export function AppHeader() {
     }
   }
 
+  const navLinkClass = (path: string) => {
+    const isActive = pathname.startsWith(path);
+    return cn(
+        "transition-colors",
+        { "text-white font-bold": isActive && isWorkMode },
+        { "text-amber-200 hover:text-white": !isActive && isWorkMode },
+        { "text-foreground font-bold": isActive && !isWorkMode },
+        { "text-muted-foreground hover:text-foreground": !isActive && !isWorkMode }
+    );
+  }
+
   return (
-    <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
+    <header className={cn(
+        "flex h-16 items-center gap-4 border-b px-4 md:px-6 sticky top-0 z-30",
+        isWorkMode ? "bg-amber-600" : "bg-card"
+    )}>
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-        <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
-          <Tractor className="h-6 w-6 text-primary" />
+        <Link href="/dashboard" className={cn("flex items-center gap-2 text-lg font-semibold md:text-base", isWorkMode && "text-white")}>
+          <Tractor className={cn("h-6 w-6", isWorkMode ? "text-white" : "text-primary")} />
           <span className="sr-only">Agri Saadhan</span>
         </Link>
-
-        <Link href="/dashboard" className={`transition-colors hover:text-foreground ${pathname.startsWith('/dashboard') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+        
+        <Link href={isWorkMode ? `/dashboard?beneficiaryId=${beneficiaryId}` : "/dashboard"} className={navLinkClass('/dashboard')}>
           Farmer
         </Link>
         
         {userData?.roles?.includes('EQUIPMENT_OWNER') && (
-            <Link href="/owner-dashboard" className={`transition-colors hover:text-foreground ${pathname.startsWith('/owner-dashboard') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+            <Link href="/owner-dashboard" className={navLinkClass('/owner-dashboard')}>
                 Owner
             </Link>
         )}
 
         {userData?.roles?.includes('DRIVER') && (
-            <Link href="/driver-dashboard" className={`transition-colors hover:text-foreground ${pathname.startsWith('/driver-dashboard') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+            <Link href="/driver-dashboard" className={navLinkClass('/driver-dashboard')}>
                 Driver
             </Link>
         )}
 
         {isSahayakVerified && (
-            <Link href="/sahayak" className={`transition-colors hover:text-foreground ${pathname.startsWith('/sahayak') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+            <Link href="/sahayak" className={navLinkClass('/sahayak')}>
                 Sahayak
             </Link>
         )}
       </nav>
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+          <Button variant="outline" size="icon" className={cn("shrink-0 md:hidden", isWorkMode && "border-amber-400 text-white hover:bg-amber-500")}>
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
@@ -100,7 +120,7 @@ export function AppHeader() {
       </Sheet>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <div className="ml-auto flex-1 sm:flex-initial">
-          <h1 className="text-xl font-bold font-headline">{title}</h1>
+          <h1 className={cn("text-xl font-bold font-headline", isWorkMode && "text-white")}>{title}</h1>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

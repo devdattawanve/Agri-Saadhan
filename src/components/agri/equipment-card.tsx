@@ -12,11 +12,19 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useSearchParams } from "next/navigation";
 
 export function EquipmentCard({ equipment }: { equipment: Equipment }) {
+  const searchParams = useSearchParams();
+  const beneficiaryId = searchParams.get('beneficiaryId');
+  
+  const linkHref = beneficiaryId 
+    ? `/equipment/${equipment.id}?beneficiaryId=${beneficiaryId}`
+    : `/equipment/${equipment.id}`;
+
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
-      <Link href={`/equipment/${equipment.id}`}>
+      <Link href={linkHref}>
         <div className="relative">
           <Image
             src={equipment.image.imageUrl}
@@ -54,8 +62,10 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
         <p className="text-sm">{equipment.distance} km from your location</p>
       </CardContent>
       <CardFooter className="mt-auto">
-        <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-            Call Now
+         <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+            <Link href={linkHref}>
+                Book Now
+            </Link>
         </Button>
       </CardFooter>
     </Card>

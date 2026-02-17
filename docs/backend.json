@@ -48,6 +48,19 @@
             "VERIFIED"
           ]
         },
+        "commissionRate": {
+            "type": "number",
+            "description": "The commission rate for a Sahayak, if applicable."
+        },
+        "latitude": {
+            "type": "number"
+        },
+        "longitude": {
+            "type": "number"
+        },
+        "geohash": {
+            "type": "string"
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the user account was created.",
@@ -83,6 +96,10 @@
         "ownerId": {
           "type": "string"
         },
+        "availabilityStatus": {
+            "type": "string",
+            "enum": ["available", "maintenance"]
+        },
         "geohash": {
           "type": "string",
           "description": "Geohash for location-based queries."
@@ -98,7 +115,8 @@
         "id",
         "name",
         "ownerId",
-        "geohash"
+        "geohash",
+        "availabilityStatus"
       ]
     },
     "Booking": {
@@ -115,7 +133,7 @@
         },
         "farmerId": {
           "type": "string",
-          "description": "The end-user (beneficiary) of the equipment."
+          "description": "The end-user (beneficiary) of the equipment. DEPRECATED, use 'beneficiary'."
         },
         "ownerId": {
           "type": "string"
@@ -130,7 +148,7 @@
         },
         "createdBy": {
           "type": "string",
-          "description": "UID of the user who initiated the booking."
+          "description": "UID of the user who initiated the booking (can be a Farmer or a Sahayak)."
         },
         "beneficiary": {
           "type": "string",
@@ -143,10 +161,21 @@
           "type": "string",
           "enum": [
             "pending",
-            "confirmed",
+            "accepted",
+            "in_progress",
             "completed",
-            "cancelled"
+            "cancelled",
+            "disputed"
           ]
+        },
+        "totalAmount": {
+            "type": "number"
+        },
+        "sahayakCommission": {
+            "type": "number"
+        },
+        "platformFee": {
+            "type": "number"
         },
         "createdAt": {
           "type": "string",
@@ -156,11 +185,11 @@
       "required": [
         "id",
         "equipmentId",
-        "farmerId",
         "ownerId",
         "createdBy",
         "beneficiary",
-        "status"
+        "status",
+        "totalAmount"
       ]
     }
   },

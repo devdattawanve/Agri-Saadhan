@@ -26,8 +26,8 @@ service cloud.firestore {
       allow update: if isOwner(userId);
       // Users can delete their own profile.
       allow delete: if isOwner(userId);
-      // Listing all users is disallowed to prevent data scraping.
-      allow list: if false;
+      // Verified sahayaks can list users to book for them.
+      allow list: if isVerifiedSahayak(request.auth.uid);
     }
     
     // Rules for the 'equipment' collection
@@ -35,33 +35,36 @@ service cloud.firestore {
         // Any authenticated user can view equipment listings.
         allow read: if isSignedIn();
         // Only the owner of the equipment can create, update, or delete it.
-        allow write: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+        // We check the incoming resource data, not the existing one.
+        allow create, update, delete: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
     }
 
     // Rules for the 'bookings' collection
     match /bookings/{bookingId} {
-      // Users can see bookings where they are the farmer, the owner, the driver, or the creator (Sahayak).
+      // Users can see bookings where they are the beneficiary, the owner, the driver, or the creator (Sahayak).
       allow get: if isSignedIn() && (
-                    resource.data.farmerId == request.auth.uid || 
+                    resource.data.beneficiary == request.auth.uid || 
                     resource.data.ownerId == request.auth.uid ||
                     resource.data.sahayakId == request.auth.uid ||
-                    resource.data.driverId == request.auth.uid
+                    resource.data.driverId == request.auth.uid ||
+                    resource.data.createdBy == request.auth.uid
                   );
 
       // Authenticated users can list bookings, but client-side queries must enforce security.
+      // A more secure rule would filter by user involvement.
       allow list: if isSignedIn();
 
-      // A user can create a booking for themselves.
-      // A verified Sahayak can create a booking for another user.
+      // A user can create a booking for themselves (beneficiary is self).
+      // A verified Sahayak can create a booking for another user (beneficiary is different).
       allow create: if isSignedIn() && (
                       (request.resource.data.createdBy == request.auth.uid && request.resource.data.beneficiary == request.auth.uid) ||
                       (isVerifiedSahayak(request.auth.uid) && request.resource.data.createdBy == request.auth.uid)
                     );
 
-      // The owner, farmer, or creator (Sahayak) of a booking can update it.
+      // The owner, beneficiary, or creator (Sahayak) of a booking can update it.
       allow update: if isSignedIn() && (
                       resource.data.ownerId == request.auth.uid ||
-                      resource.data.farmerId == request.auth.uid ||
+                      resource.data.beneficiary == request.auth.uid ||
                       resource.data.createdBy == request.auth.uid
                     );
       

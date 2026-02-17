@@ -1,7 +1,7 @@
 "use client";
 import { equipmentData } from "@/lib/data";
 import Image from "next/image";
-import { notFound, useRouter } from "next/navigation";
+import { notFound, useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -21,11 +21,15 @@ import { useState } from "react";
 
 export default function BookingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
   const [paymentOption, setPaymentOption] = useState("pay_on_delivery");
   const [loading, setLoading] = useState(false);
+
+  const beneficiaryId = searchParams.get('beneficiaryId');
+  const isSahayakBooking = !!beneficiaryId;
 
   const equipment = equipmentData.find((e) => e.id === params.id);
 
@@ -42,18 +46,25 @@ export default function BookingPage({ params }: { params: { id: string } }) {
     
     const bookingData = {
         equipmentId: equipment.id,
-        farmerId: user.uid,
         ownerId: "owner_placeholder_id", // This should be dynamic based on equipment owner
-        sahayakId: null, // Placeholder
         driverId: null, // Placeholder
-        plannedStartTime: new Date().toISOString(), // Placeholder for now
-        plannedEndTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toISOString(), // Placeholder for 2 hours later
-        status: 'confirmed',
+        
+        // Core booking logic
+        createdBy: user.uid,
+        beneficiary: isSahayakBooking ? beneficiaryId : user.uid,
+        commissionEligible: isSahayakBooking,
+        sahayakId: isSahayakBooking ? user.uid : null,
+
+        // Status and financials
+        status: 'pending',
         paymentStatus: paymentOption.toUpperCase(),
-        bookingDate: new Date().toISOString().split('T')[0],
+        totalAmount: equipment.price.amount,
+        sahayakCommission: 0, // To be calculated later
+        platformFee: 0, // To be calculated later
+        
+        // Timestamps
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        totalAmount: equipment.price.amount, // Simplified for now
     };
 
     try {
@@ -80,7 +91,8 @@ export default function BookingPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold font-headline mb-6">Confirm Your Booking</h1>
+        <h1 className="text-3xl font-bold font-headline mb-2">Confirm Your Booking</h1>
+        {isSahayakBooking && <p className="text-lg text-muted-foreground mb-6">You are booking on behalf of another farmer.</p>}
         <div className="grid md:grid-cols-2 gap-8">
             <div>
                 <Card>
@@ -108,10 +120,10 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                             </div>
                             <div>
                                 <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="r2" />
-                                    <Label htmlFor="r2">Credit (via Sahayak)</Label>
+                                    <RadioGroupItem value="credit" id="r2" disabled={!isSahayakBooking} />
+                                    <Label htmlFor="r2" className={!isSahayakBooking ? 'text-muted-foreground' : ''}>Credit (via Sahayak)</Label>
                                 </div>
-                                <p className="text-xs text-muted-foreground ml-6">Available if linked to a Sahayak.</p>
+                                <p className="text-xs text-muted-foreground ml-6">Only available if booking through a Sahayak.</p>
                             </div>
                         </RadioGroup>
                     </CardContent>

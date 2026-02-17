@@ -13,14 +13,22 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ShieldCheck, MapPin, Clock, Phone, FileText } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 
 export default function EquipmentDetailPage({ params }: { params: { id: string } }) {
+  const searchParams = useSearchParams();
+  const beneficiaryId = searchParams.get('beneficiaryId');
+
   const equipment = equipmentData.find((e) => e.id === params.id);
 
   if (!equipment) {
     notFound();
   }
+
+  const bookingLink = beneficiaryId 
+    ? `/booking/${equipment.id}?beneficiaryId=${beneficiaryId}`
+    : `/booking/${equipment.id}`;
+
 
   return (
     <div className="container mx-auto py-8">
@@ -69,7 +77,7 @@ export default function EquipmentDetailPage({ params }: { params: { id: string }
                 <CardFooter className="mt-auto grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Button size="lg" variant="outline"><Phone className="mr-2 h-4 w-4"/> Call Now</Button>
                     <Button size="lg" className="bg-primary hover:bg-primary/90" asChild>
-                        <Link href={`/booking/${equipment.id}`}>
+                        <Link href={bookingLink}>
                             <FileText className="mr-2 h-4 w-4" /> Book Now
                         </Link>
                     </Button>
