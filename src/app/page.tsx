@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/agri/logo";
+import { useUser } from "@/firebase";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const languages = [
   { name: "English", code: "en" },
@@ -13,6 +18,23 @@ const languages = [
 ];
 
 export default function OnboardingPage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">

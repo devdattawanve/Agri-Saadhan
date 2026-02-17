@@ -4,40 +4,36 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents an individual user of the Agri Saadhan application, which can be a farmer, equipment owner, driver, or a Sahayak (agent).",
+      "description": "Represents an individual user of the Agri Saadhan application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "Unique identifier for the User entity, matching Firebase Auth UID."
         },
         "name": {
           "type": "string",
-          "description": "The full name of the user, collected during onboarding."
+          "description": "The full name of the user."
         },
         "contactPhoneNumber": {
           "type": "string",
-          "description": "The phone number of the user, used for contact and identification (e.g., by Sahayaks when booking for others). This is not for primary authentication, which is handled externally."
+          "description": "The phone number of the user, used for authentication and contact."
         },
         "villageTehsil": {
           "type": "string",
-          "description": "The village or tehsil where the user resides, collected during onboarding."
+          "description": "The village or tehsil where the user resides."
         },
         "preferredLanguage": {
           "type": "string",
-          "description": "The user's preferred language for the application interface.",
-          "format": "language"
+          "description": "The user's preferred language for the application interface."
         },
         "isSahayak": {
           "type": "boolean",
-          "description": "Indicates if the user has the 'Sahayak' (agent) role, allowing them to book equipment for other farmers and track commissions."
+          "description": "DEPRECATED in favor of sahayakStatus. Indicates if the user has the 'Sahayak' (agent) role."
         },
-        "latitude": {
-          "type": "number",
-          "description": "The geographical latitude coordinate of the user's primary location."
-        },
-        "longitude": {
-          "type": "number",
-          "description": "The geographical longitude coordinate of the user's primary location."
+        "sahayakStatus": {
+          "type": "string",
+          "description": "The verification status of a Sahayak.",
+          "enum": ["NONE", "PENDING", "VERIFIED"]
         },
         "createdAt": {
           "type": "string",
@@ -55,288 +51,55 @@
         "name",
         "contactPhoneNumber",
         "villageTehsil",
-        "preferredLanguage",
-        "isSahayak",
-        "createdAt"
-      ]
-    },
-    "EquipmentType": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "EquipmentType",
-      "type": "object",
-      "description": "Categorization of agricultural equipment to facilitate search and organization.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the EquipmentType entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the equipment type (e.g., 'Rotavator', 'Tractor', 'Plough')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the equipment type."
-        },
-        "iconUrl": {
-          "type": "string",
-          "description": "URL to an icon representing this equipment type for UI display.",
-          "format": "uri"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "description"
+        "sahayakStatus"
       ]
     },
     "Equipment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Equipment",
       "type": "object",
-      "description": "Represents an individual piece of agricultural equipment available for rental.",
+      "description": "Represents a piece of agricultural equipment available for rental.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Equipment entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The common name or model of the equipment (e.g., 'Mahindra 265 DI')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the equipment, including its capabilities and specifications."
-        },
-        "equipmentTypeId": {
-          "type": "string",
-          "description": "Reference to the EquipmentType this equipment belongs to. (Relationship: EquipmentType 1:N Equipment)"
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to the User who owns this equipment. (Relationship: User 1:N Equipment)"
-        },
-        "videoUrl": {
-          "type": "string",
-          "description": "URL for a video preview of the equipment.",
-          "format": "uri"
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL for an image of the equipment for listing display.",
-          "format": "uri"
-        },
-        "rentalRate": {
-          "type": "number",
-          "description": "The hourly rental rate for the equipment. (Unit assumed to be 'per hour' unless otherwise specified)."
-        },
-        "isGramPanchayatVerified": {
-          "type": "boolean",
-          "description": "Indicates if the equipment is verified by the Gram Panchayat, displayed with a 'Green Shield' icon."
-        },
-        "latitude": {
-          "type": "number",
-          "description": "The geographical latitude coordinate of the equipment's base location."
-        },
-        "longitude": {
-          "type": "number",
-          "description": "The geographical longitude coordinate of the equipment's base location."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current availability status of the equipment (e.g., 'available', 'rented', 'maintenance')."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the equipment record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the equipment record was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "geohash": { "type": "string", "description": "Geohash for location-based queries." },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" }
       },
-      "required": [
-        "id",
-        "name",
-        "equipmentTypeId",
-        "ownerId",
-        "rentalRate",
-        "isGramPanchayatVerified",
-        "latitude",
-        "longitude",
-        "status",
-        "createdAt"
-      ]
+      "required": ["id", "name", "ownerId", "geohash"]
     },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Booking",
       "type": "object",
-      "description": "Represents a rental transaction for a piece of equipment between a farmer and an owner, potentially facilitated by a Sahayak.",
+      "description": "Represents a rental transaction for a piece of equipment.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Booking entity."
-        },
-        "equipmentId": {
-          "type": "string",
-          "description": "Reference to the Equipment being booked. (Relationship: Equipment 1:N Booking)"
-        },
-        "farmerId": {
-          "type": "string",
-          "description": "Reference to the User who is the farmer renting the equipment. (Relationship: User 1:N Booking)"
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to the User who owns the equipment for this booking. (Relationship: User 1:N Booking)"
-        },
-        "sahayakId": {
-          "type": "string",
-          "description": "Reference to the User (Sahayak) who made this booking on behalf of a farmer, if applicable. (Relationship: User 1:N Booking)"
-        },
-        "driverId": {
-          "type": "string",
-          "description": "Reference to the User who is assigned as the driver for this booking, if applicable. (Relationship: User 1:N Booking)"
-        },
-        "plannedStartTime": {
-          "type": "string",
-          "description": "The planned start date and time for the equipment usage.",
-          "format": "date-time"
-        },
-        "plannedEndTime": {
-          "type": "string",
-          "description": "The planned end date and time for the equipment usage.",
-          "format": "date-time"
-        },
-        "actualStartTime": {
-          "type": "string",
-          "description": "The actual start date and time when the equipment usage began.",
-          "format": "date-time"
-        },
-        "actualEndTime": {
-          "type": "string",
-          "description": "The actual end date and time when the equipment usage concluded.",
-          "format": "date-time"
-        },
-        "startFuelGaugePhotoUrl": {
-          "type": "string",
-          "description": "URL to the photo of the fuel gauge at the start of the work for diesel tracking.",
-          "format": "uri"
-        },
-        "endFuelGaugePhotoUrl": {
-          "type": "string",
-          "description": "URL to the photo of the fuel gauge at the end of the work for diesel tracking.",
-          "format": "uri"
-        },
-        "farmerFuelGaugeApproval": {
-          "type": "boolean",
-          "description": "Indicates if the farmer has approved the diesel fuel gauge readings."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the booking (e.g., 'pending', 'confirmed', 'in-progress', 'completed', 'cancelled')."
-        },
-        "paymentStatus": {
-          "type": "string",
-          "description": "The payment status of the booking (e.g., 'PENDING', 'PAID', 'PAY_ON_DELIVERY', 'CREDIT')."
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The final calculated total amount for the booking after work completion."
-        },
-        "bookingDate": {
-          "type": "string",
-          "description": "The date when the booking was initially made.",
-          "format": "date"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the booking record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the booking record was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "equipmentId": { "type": "string" },
+        "farmerId": { "type": "string", "description": "The end-user (beneficiary) of the equipment." },
+        "ownerId": { "type": "string" },
+        "sahayakId": { "type": "string", "description": "UID of the Sahayak who created the booking, if applicable." },
+        "createdBy": { "type": "string", "description": "UID of the user who initiated the booking." },
+        "beneficiary": { "type": "string", "description": "UID of the farmer who will use the equipment." },
+        "commissionEligible": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": [
         "id",
         "equipmentId",
         "farmerId",
         "ownerId",
-        "plannedStartTime",
-        "plannedEndTime",
-        "status",
-        "paymentStatus",
-        "bookingDate",
-        "createdAt"
-      ]
-    },
-    "SahayakCommission": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SahayakCommission",
-      "type": "object",
-      "description": "Records the commission earned by a Sahayak for a specific booking.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the SahayakCommission entity."
-        },
-        "sahayakId": {
-          "type": "string",
-          "description": "Reference to the User who earned this commission (the Sahayak). (Relationship: User 1:N SahayakCommission)"
-        },
-        "bookingId": {
-          "type": "string",
-          "description": "Reference to the Booking for which the commission was earned. (Relationship: Booking 1:N SahayakCommission)"
-        },
-        "amount": {
-          "type": "number",
-          "description": "The amount of commission earned for this booking."
-        },
-        "commissionRateApplied": {
-          "type": "number",
-          "description": "The percentage rate of commission applied for this specific booking (e.g., 5.0 for 5%)."
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the commission payout (e.g., 'PENDING', 'PAID')."
-        },
-        "transactionDate": {
-          "type": "string",
-          "description": "The date when the commission was recorded or earned.",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the commission record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the commission record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "sahayakId",
-        "bookingId",
-        "amount",
-        "commissionRateApplied",
-        "status",
-        "transactionDate",
-        "createdAt"
+        "createdBy",
+        "beneficiary",
+        "status"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "phone"
     ]
   },
   "firestore": {
@@ -348,45 +111,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores individual user profiles. Access is primarily restricted to the owner (matching userId with request.auth.uid), but Sahayaks may be allowed to read profiles of other users for booking purposes.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user, matching Firebase Authentication UID."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/sahayaks/{sahayakId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "A collection used purely for authorization. The existence of a document at this path signifies that the user (whose UID is sahayakId) holds the 'Sahayak' role. This allows for efficient role checks in security rules without requiring 'get()' calls on the /users/{userId} document.",
-          "params": [
-            {
-              "name": "sahayakId",
-              "description": "The unique ID of the user who is a Sahayak, matching Firebase Authentication UID."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/equipment_types/{equipmentTypeId}",
-        "definition": {
-          "entityName": "EquipmentType",
-          "schema": {
-            "$ref": "#/backend/entities/EquipmentType"
-          },
-          "description": "Stores categories of agricultural equipment. This data is static and publicly readable, typically managed by administrators.",
-          "params": [
-            {
-              "name": "equipmentTypeId",
-              "description": "The unique ID of the equipment type."
-            }
-          ]
+          "description": "Stores individual user profiles."
         }
       },
       {
@@ -396,13 +121,7 @@
           "schema": {
             "$ref": "#/backend/entities/Equipment"
           },
-          "description": "Stores individual pieces of agricultural equipment available for rental. Documents include denormalized 'ownerId' for authorization independence. Publicly readable for search/discovery, but only the 'ownerId' can modify.",
-          "params": [
-            {
-              "name": "equipmentId",
-              "description": "The unique ID of the equipment."
-            }
-          ]
+          "description": "Stores individual pieces of agricultural equipment."
         }
       },
       {
@@ -412,32 +131,9 @@
           "schema": {
             "$ref": "#/backend/entities/Booking"
           },
-          "description": "Records rental transactions. Documents include denormalized 'farmerId', 'ownerId', 'sahayakId', and 'driverId' for authorization independence, allowing direct rule checks based on the requesting user's UID matching any of these roles.",
-          "params": [
-            {
-              "name": "bookingId",
-              "description": "The unique ID of the booking."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/sahayak_commissions/{commissionId}",
-        "definition": {
-          "entityName": "SahayakCommission",
-          "schema": {
-            "$ref": "#/backend/entities/SahayakCommission"
-          },
-          "description": "Records commissions earned by Sahayaks. Documents include denormalized 'sahayakId' for authorization independence, allowing Sahayaks to directly access their own commission records.",
-          "params": [
-            {
-              "name": "commissionId",
-              "description": "The unique ID of the sahayak commission record."
-            }
-          ]
+          "description": "Stores booking and rental transaction records."
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure for Agri Saadhan prioritizes robust security, scalability, and debuggability by adhering to Authorization Independence and QAPs (Queries Are Not Filters) principles. All authorization-relevant data is explicitly denormalized within each document or managed through dedicated role collections, eliminating the need for `get()` calls in security rules and enabling atomic operations.\n\n**Authorization Independence via Denormalization:**\n*   **Users:** User profiles are stored in `/users/{userId}`. Each user's profile is self-owned, with `userId` directly matching `request.auth.uid`, ensuring direct access control without external dependencies.\n*   **Sahayak Roles:** Instead of relying solely on the `isSahayak` field within the `/users/{userId}` document for role checks (which would require a `get()` call), a dedicated collection `/sahayaks/{sahayakId}` is introduced. Documents in this collection exist solely to signify a user's Sahayak role, where `sahayakId` is the user's UID. This allows for simple, efficient role checks using `exists(/sahayaks/$(request.auth.uid))` in security rules, fulfilling the 'Existence over Content' mandate for global roles.\n*   **Equipment:** Stored in `/equipment/{equipmentId}`, each equipment document includes `ownerId`. This field directly identifies the owning user, allowing rules to authorize updates/deletions based on `request.auth.uid == resource.data.ownerId` without needing to fetch the owner's `User` document.\n*   **Bookings:** Each booking document in `/bookings/{bookingId}` explicitly includes `farmerId`, `ownerId`, `sahayakId`, and `driverId`. This critical denormalization allows rules to grant access (read/write) if `request.auth.uid` matches any of these fields directly within the booking document, without any cross-document lookups. This is essential for atomicity and simplifies rule logic considerably.\n*   **Sahayak Commissions:** Similar to bookings, `/sahayak_commissions/{commissionId}` documents contain `sahayakId`, enabling direct authorization for Sahayaks to view their earned commissions.\n\n**Support for QAPs (Queries Are Not Filters):**\n*   **Structural Segregation:** Data with different security postures is separated into distinct collections:\n    *   `/equipment_types/{equipmentTypeId}`: Publicly readable (global static data), writeable only by administrators.\n    *   `/equipment/{equipmentId}`: Publicly readable for discovery and listing (e.g., 'Mandi' view), but writeable only by the `ownerId` identified within the document. This allows clients to query for all equipment, and rules enforce write ownership.\n    *   `/users/{userId}`: Primarily readable/writeable by the `userId` themselves, with an additional rule allowing Sahayaks to read other user profiles (e.g., for 'Book for Others' form). This granular access is enabled by the `/sahayaks/{sahayakId}` role collection.\n    *   `/bookings/{bookingId}`: Access is strictly controlled by `farmerId`, `ownerId`, `sahayakId`, and `driverId`. Users performing a 'list my bookings' query (e.g., `bookings.where('farmerId', '==', request.auth.uid)`) will receive only authorized results because the security rules will only permit reads where `request.auth.uid` matches one of the denormalized IDs. This ensures that client-side queries are always safe and only return data the user is explicitly allowed to see.\n    *   `/sahayak_commissions/{commissionId}`: Only the `sahayakId` associated with the commission can read/write. Sahayaks will query their own commissions (`sahayak_commissions.where('sahayakId', '==', request.auth.uid)`), and the rules enforce this direct ownership.\n\nThis design ensures that security rules are concise, easy to reason about, and performant, as they avoid complex joins or lookups across documents. The structure inherently supports scalable access control and predictable data integrity."
+    ]
   }
 }

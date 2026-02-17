@@ -1,13 +1,73 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/agri/logo";
+import { useAuth } from "@/firebase";
+import { signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+
+declare global {
+    interface Window {
+        recaptchaVerifier: RecaptchaVerifier;
+        confirmationResult: any;
+    }
+}
 
 export default function LoginPage() {
+    const auth = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSendOtp = async () => {
+        if (!auth) return;
+        setLoading(true);
+        try {
+            const appVerifier = window.recaptchaVerifier;
+            const confirmationResult = await signInWithPhoneNumber(auth, `+91${phoneNumber}`, appVerifier);
+            window.confirmationResult = confirmationResult;
+            router.push("/verify-otp");
+        } catch (error: any) {
+            console.error("Error sending OTP:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message || "Failed to send OTP. Please try again.",
+            });
+            // Reset reCAPTCHA
+            if (window.recaptchaVerifier) {
+              window.recaptchaVerifier.render().then((widgetId) => {
+                // @ts-ignore
+                grecaptcha.reset(widgetId);
+              });
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // This effect sets up the reCAPTCHA verifier
+    useState(() => {
+        if (auth && !window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible',
+                'callback': () => {
+                    // reCAPTCHA solved, allow signInWithPhoneNumber.
+                }
+            });
+        }
+    });
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+      <div id="recaptcha-container"></div>
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center">
           <Logo />
@@ -19,11 +79,22 @@ export default function LoginPage() {
             <Label htmlFor="phone">Mobile Number</Label>
             <div className="flex items-center gap-2">
               <span className="rounded-md border bg-muted px-3 py-2 text-sm">+91</span>
-              <Input id="phone" type="tel" placeholder="98765 43210" />
+              <Input 
+                id="phone" 
+                type="tel" 
+                placeholder="98765 43210" 
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+              />
             </div>
           </div>
-          <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
-            <Link href="/verify-otp">Send OTP</Link>
+          <Button 
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+            onClick={handleSendOtp}
+            disabled={loading || phoneNumber.length !== 10}
+          >
+            {loading ? "Sending OTP..." : "Send OTP"}
           </Button>
         </CardContent>
         <CardFooter className="flex-col gap-4">

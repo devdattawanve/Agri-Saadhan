@@ -15,22 +15,67 @@ import { Upload, CheckCircle2, CircleDashed } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useUser, useFirestore, addDocumentNonBlocking } from "@/firebase";
+import { collection } from "firebase/firestore";
+import { useState } from "react";
 
 export default function BookingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const [paymentOption, setPaymentOption] = useState("pay_on_delivery");
+  const [loading, setLoading] = useState(false);
+
   const equipment = equipmentData.find((e) => e.id === params.id);
 
   if (!equipment) {
     notFound();
   }
 
-  const handleConfirmBooking = () => {
-    toast({
-        title: "Booking Confirmed!",
-        description: `Your booking for ${equipment.name} is confirmed.`,
-    });
-    router.push('/dashboard');
+  const handleConfirmBooking = async () => {
+    if (!user) {
+        toast({ variant: "destructive", title: "You must be logged in to book."});
+        return;
+    }
+    setLoading(true);
+    
+    const bookingData = {
+        equipmentId: equipment.id,
+        farmerId: user.uid,
+        ownerId: "owner_placeholder_id", // This should be dynamic based on equipment owner
+        sahayakId: null, // Placeholder
+        driverId: null, // Placeholder
+        plannedStartTime: new Date().toISOString(), // Placeholder for now
+        plannedEndTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000).toISOString(), // Placeholder for 2 hours later
+        status: 'confirmed',
+        paymentStatus: paymentOption.toUpperCase(),
+        bookingDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        totalAmount: equipment.price.amount, // Simplified for now
+    };
+
+    try {
+        const bookingsColRef = collection(firestore, 'bookings');
+        await addDocumentNonBlocking(bookingsColRef, bookingData);
+        
+        toast({
+            title: "Booking Confirmed!",
+            description: `Your booking for ${equipment.name} is confirmed.`,
+        });
+        router.push('/dashboard');
+
+    } catch (error: any) {
+        console.error("Booking failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Booking Failed",
+            description: error.message || "There was a problem confirming your booking.",
+        });
+    } finally {
+        setLoading(false);
+    }
   }
 
   return (
@@ -53,7 +98,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                         <CardTitle className="font-headline text-xl">Payment Options</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <RadioGroup defaultValue="pay_on_delivery" className="space-y-4">
+                        <RadioGroup defaultValue="pay_on_delivery" onValueChange={setPaymentOption} className="space-y-4">
                             <div>
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="pay_on_delivery" id="r1" />
@@ -100,8 +145,8 @@ export default function BookingPage({ params }: { params: { id: string } }) {
             </div>
         </div>
         <div className="mt-8 text-center">
-            <Button size="lg" className="w-full max-w-md bg-primary hover:bg-primary/90" onClick={handleConfirmBooking}>
-                Confirm Booking
+            <Button size="lg" className="w-full max-w-md bg-primary hover:bg-primary/90" onClick={handleConfirmBooking} disabled={loading}>
+                {loading ? "Confirming..." : "Confirm Booking"}
             </Button>
         </div>
     </div>

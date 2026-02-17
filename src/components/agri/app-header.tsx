@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
-import { useRouter } from "next/navigation";
+import { useAuth, useUser, useDoc, useFirestore } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { useMemo } from "react";
 
 const pageTitles: { [key: string]: string } = {
   "/dashboard": "Mandi View",
@@ -29,6 +32,18 @@ const pageTitles: { [key: string]: string } = {
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  
+  const userDocRef = useMemo(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc(userDocRef);
+
+  const isSahayakVerified = userData?.sahayakStatus === 'VERIFIED';
   
   const title = Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/') 
     ? pageTitles[Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/')!] 
@@ -39,6 +54,13 @@ export function AppHeader() {
         router.push('/sahayak');
     } else {
         router.push('/dashboard');
+    }
+  }
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      router.push('/login');
     }
   }
 
@@ -79,19 +101,19 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-                <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                    <Users className="mr-2 h-4 w-4" />
-                    <Label htmlFor="sahayak-mode" className="flex-grow font-normal">Sahayak Mode</Label>
-                    <Switch id="sahayak-mode" checked={pathname.startsWith('/sahayak')} onCheckedChange={handleSahayakToggle} />
-                </div>
-            </DropdownMenuGroup>
+            {isSahayakVerified && (
+              <DropdownMenuGroup>
+                  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                      <Users className="mr-2 h-4 w-4" />
+                      <Label htmlFor="sahayak-mode" className="flex-grow font-normal">Sahayak Mode</Label>
+                      <Switch id="sahayak-mode" checked={pathname.startsWith('/sahayak')} onCheckedChange={handleSahayakToggle} />
+                  </div>
+              </DropdownMenuGroup>
+            )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </Link>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

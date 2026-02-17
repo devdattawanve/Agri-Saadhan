@@ -1,193 +1,75 @@
-/**
- * Core Philosophy:
- * This ruleset implements a multi-faceted security model tailored for the Agri Saadhan application.
- * It combines user-ownership for personal data, a dedicated role-based system for 'Sahayak' agents,
- * shared access for collaborative documents like bookings, and a public-read/owner-write model for
- * shared resources like equipment listings. The central principle is 'Authorization Independence',
- * where all necessary data for a security decision is denormalized directly onto the document being
- * secured, eliminating slow and costly cross-document reads (`get()` calls).
- *
- * Data Structure:
- * The data is organized into several top-level collections:
- * - `/users/{userId}`: Private user profiles, owned by the user.
- * - `/sahayaks/{sahayakId}`: A role-marking collection. The existence of a doc here grants Sahayak privileges.
- * - `/equipment_types/{typeId}`: Public, read-only administrative data.
- * - `/equipment/{equipmentId}`: Publicly browsable equipment listings, with writes restricted to the owner.
- * - `/bookings/{bookingId}`: Shared documents accessible only to participants (farmer, owner, sahayak, driver).
- * - `/sahayak_commissions/{commId}`: Private commission records, owned by the Sahayak.
- *
- * Key Security Decisions:
- * - Sahayak Role System: A dedicated `/sahayaks` collection is used for efficient role-checking via `exists()`.
- *   This is more performant and secure than checking a boolean field on a user profile.
- * - User Profile Access: A user can always manage their own profile. A user with the Sahayak role is
- *   granted read-only (`get`) access to other user profiles to facilitate booking for others.
- *   Listing all users is strictly forbidden to prevent data scraping.
- * - Shared Booking Documents: Access to `/bookings` is granted if the requesting user's ID matches any
- *   of the participant fields (`farmerId`, `ownerId`, `sahayakId`, `driverId`) denormalized on the document.
- * - Public Listings: The `/equipment` collection is publicly readable to allow all users to browse available
- *   machinery, but write access is strictly limited to the user designated in the `ownerId` field.
- * - Default Deny: Any operation not explicitly granted is denied. Client-side writes to administrative
- *   collections like `/equipment_types` and `/sahayaks` are completely disabled.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --------------------------------
-    // Helper Functions
-    // --------------------------------
-
-    /**
-     * Checks if a user is authenticated.
-     */
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the foundation of the user-ownership model.
-     * @param userId The UID of the document owner.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks if the document being accessed already exists in Firestore.
-     * Crucial for preventing updates or deletes on non-existent documents.
-     */
-    function isExistingDoc() {
-      return resource != null;
+    // A Sahayak is a user with their sahayakStatus field set to 'VERIFIED'
+    function isVerifiedSahayak(userId) {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
     }
 
-    /**
-     * Checks if the requesting user has the 'Sahayak' role by verifying
-     * the existence of their role document in the `/sahayaks` collection.
-     */
-    function isSahayak() {
-      return isSignedIn() && exists(/databases/$(database)/documents/sahayaks/$(request.auth.uid));
-    }
-
-    /**
-     * Checks if the requesting user is a participant in a given booking.
-     * Access is granted if the user is the farmer, owner, sahayak, or driver.
-     * @param bookingData The resource data of the booking document.
-     */
-    function isBookingParticipant(bookingData) {
-      let participantIds = [
-        bookingData.farmerId,
-        bookingData.ownerId,
-        bookingData.sahayakId,
-        bookingData.driverId
-      ];
-      return isSignedIn() && request.auth.uid in participantIds;
-    }
-
-    // --------------------------------
-    // Collection Rules
-    // --------------------------------
-
-    /**
-     * @description Manages user profile data. A user can manage their own document.
-     *   A Sahayak is granted read-only access to other user profiles to facilitate bookings.
-     * @path /users/{userId}
-     * @allow (get, update, delete) A user (uid: 'user_abc') accesses their own document at `/users/user_abc`.
-     * @allow (get) A Sahayak (uid: 'sahayak_123') reads another user's profile at `/users/user_abc`.
-     * @deny (list) Any user, including the owner, attempts to list documents in the `/users` collection.
-     * @deny (update) A user (uid: 'user_xyz') tries to update another user's document at `/users/user_abc`.
-     * @principle Restricts access to a user's own data tree, with a specific role-based exception for reads.
-     */
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow get: if isOwner(userId) || isSahayak();
-      allow list: if false; // Prevent user enumeration
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && isExistingDoc() && request.resource.data.id == resource.data.id;
-      allow delete: if isOwner(userId) && isExistingDoc();
-    }
-
-    /**
-     * @description A role-marking collection. The existence of a document grants the Sahayak role.
-     *   This collection should be managed by a trusted backend process, not by clients.
-     * @path /sahayaks/{sahayakId}
-     * @allow (none) No client-side operations are permitted.
-     * @deny (get, list, create, update, delete) A regular user or Sahayak attempts any operation.
-     * @principle Secures role-granting data by making it inaccessible to clients. Role checks use `exists()`.
-     */
-    match /sahayaks/{sahayakId} {
-      allow get: if false;
+      // Any authenticated user can create their own profile.
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      // Users can read their own profile. Verified Sahayaks can read any profile.
+      allow get: if isOwner(userId) || isVerifiedSahayak(request.auth.uid);
+      // Users can update their own profile.
+      allow update: if isOwner(userId);
+      // Users can delete their own profile.
+      allow delete: if isOwner(userId);
+      // Listing all users is disallowed to prevent data scraping.
       allow list: if false;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
     }
-
-    /**
-     * @description Stores public, static data about equipment categories.
-     *   This data is readable by everyone but not writable by clients.
-     * @path /equipment_types/{equipmentTypeId}
-     * @allow (get, list) Any user (signed in or not) can read equipment types.
-     * @deny (create, update, delete) Any user attempts to modify the equipment type list.
-     * @principle Segregates public read-only data from private or user-managed data.
-     */
-    match /equipment_types/{equipmentTypeId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Publicly browsable equipment listings. Anyone can view equipment,
-     *   but only the owner of the equipment can create, update, or delete it.
-     * @path /equipment/{equipmentId}
-     * @allow (get, list) Any user (signed in or not) can browse all equipment.
-     * @allow (create) An authenticated user creates a new equipment listing, setting themself as the `ownerId`.
-     * @allow (update) The owner (uid: 'owner_abc') updates their equipment doc where `resource.data.ownerId` is 'owner_abc'.
-     * @deny (update) A user (uid: 'user_xyz') tries to update equipment owned by 'owner_abc'.
-     * @principle Implements a public-read, owner-write access pattern using a denormalized `ownerId`.
-     */
+    
+    // Rules for the 'equipment' collection
     match /equipment/{equipmentId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isSignedIn() && isExistingDoc() && isOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if isSignedIn() && isExistingDoc() && isOwner(resource.data.ownerId);
+        // Any authenticated user can view equipment listings.
+        allow read: if isSignedIn();
+        // Only the owner of the equipment can create, update, or delete it.
+        allow write: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
     }
 
-    /**
-     * @description Manages booking records. Access is restricted to the participants of the booking
-     *   (farmer, owner, sahayak, or driver).
-     * @path /bookings/{bookingId}
-     * @allow (get) The farmer (uid: 'farmer_123') reads a booking where `resource.data.farmerId` is 'farmer_123'.
-     * @allow (list) An authenticated user can query for bookings, but rules will only return docs they are a participant in.
-     * @deny (get) A user (uid: 'user_xyz') tries to read a booking they are not a participant in.
-     * @principle Enforces shared access for a closed set of collaborators using denormalized participant IDs.
-     */
+    // Rules for the 'bookings' collection
     match /bookings/{bookingId} {
-      allow get: if isBookingParticipant(resource.data);
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && (isOwner(request.resource.data.farmerId) || isOwner(request.resource.data.sahayakId));
-      allow update: if isExistingDoc() && isBookingParticipant(resource.data) && request.resource.data.farmerId == resource.data.farmerId && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if isExistingDoc() && isBookingParticipant(resource.data);
-    }
+      // Users can see bookings where they are the farmer or the owner.
+      // A Sahayak can see bookings they created.
+      allow get: if isSignedIn() && (
+                    resource.data.farmerId == request.auth.uid || 
+                    resource.data.ownerId == request.auth.uid ||
+                    resource.data.sahayakId == request.auth.uid
+                  );
 
-    /**
-     * @description Stores commission records for Sahayaks. Only the Sahayak who earned
-     *   the commission can access the record.
-     * @path /sahayak_commissions/{commissionId}
-     * @allow (get) A Sahayak (uid: 'sahayak_123') reads their own commission where `resource.data.sahayakId` is 'sahayak_123'.
-     * @allow (list) A Sahayak can query for their own commissions.
-     * @deny (get) Another user (uid: 'user_xyz') tries to read a commission belonging to 'sahayak_123'.
-     * @principle Enforces strict document ownership based on the `sahayakId` field.
-     */
-    match /sahayak_commissions/{commissionId} {
-      allow get: if isOwner(resource.data.sahayakId);
+      // Authenticated users can list bookings, but client-side queries must enforce security.
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(request.resource.data.sahayakId);
-      allow update: if isExistingDoc() && isOwner(resource.data.sahayakId) && request.resource.data.sahayakId == resource.data.sahayakId;
-      allow delete: if isExistingDoc() && isOwner(resource.data.sahayakId);
+
+      // A user can create a booking for themselves.
+      // A verified Sahayak can create a booking for another user.
+      allow create: if isSignedIn() && (
+                      (request.resource.data.createdBy == request.auth.uid && request.resource.data.beneficiary == request.auth.uid) ||
+                      (isVerifiedSahayak(request.auth.uid) && request.resource.data.createdBy == request.auth.uid)
+                    );
+
+      // The owner, farmer, or creator (Sahayak) of a booking can update it.
+      allow update: if isSignedIn() && (
+                      resource.data.ownerId == request.auth.uid ||
+                      resource.data.farmerId == request.auth.uid ||
+                      resource.data.createdBy == request.auth.uid
+                    );
+      
+      // The owner or creator (Sahayak) can cancel/delete a booking.
+      allow delete: if isSignedIn() && (
+                      resource.data.ownerId == request.auth.uid ||
+                      resource.data.createdBy == request.auth.uid
+                    );
     }
   }
 }
