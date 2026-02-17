@@ -6,4 +6,4 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
   # Increased timeout to allow for longer-running server operations.
-  timeoutSeconds: 120
+  timeoutSeconds: 300
