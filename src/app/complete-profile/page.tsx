@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/agri/logo";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MapPin } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
 
 const availableRoles = [
   { id: 'FARMER', label: 'Farmer' },
@@ -31,23 +31,45 @@ export default function CompleteProfilePage() {
     const [farmSize, setFarmSize] = useState("");
     const [detectedCoords, setDetectedCoords] = useState<{lat: number, lng: number} | null>(null);
     const [loading, setLoading] = useState(false);
+    const [detectingLocation, setDetectingLocation] = useState(false);
 
-    const handleDetectLocation = () => {
+    const handleDetectLocation = async () => {
+        setDetectingLocation(true);
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                setDetectedCoords({
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                });
-                toast({ title: "Location Detected!", description: "Your current location has been captured." });
-            }, error => {
-                toast({ variant: "destructive", title: "Location Error", description: "Could not get your location. Please enter it manually."});
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const { latitude, longitude } = position.coords;
+                setDetectedCoords({ lat: latitude, lng: longitude });
+                toast({ title: "Location Detected!", description: "Fetching your address..." });
+
+                try {
+                    // Using Nominatim for reverse geocoding - no API key needed for this public service
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+                    const data = await response.json();
+                    if (data && data.address) {
+                        const { village, town, city_district, state } = data.address;
+                        const locationString = village || town || city_district || 'Unknown Area';
+                        const finalLocation = `${locationString}, ${state}`;
+                        setLocation(finalLocation);
+                        toast({ title: "Address Found!", description: finalLocation });
+                    } else {
+                        toast({ variant: "destructive", title: "Address Not Found", description: "Could not find address. Please enter manually." });
+                    }
+                } catch (error) {
+                    toast({ variant: "destructive", title: "Geocoding Failed", description: "Could not fetch address details." });
+                    console.error("Reverse geocoding error:", error);
+                } finally {
+                    setDetectingLocation(false);
+                }
+            }, (error) => {
+                toast({ variant: "destructive", title: "Location Error", description: "Could not get your location. Please enter it manually." });
                 console.error("Geolocation error:", error);
+                setDetectingLocation(false);
             });
         } else {
-            toast({ variant: "destructive", title: "Unsupported", description: "Your browser does not support location detection."});
+            toast({ variant: "destructive", title: "Unsupported", description: "Your browser does not support location detection." });
+            setDetectingLocation(false);
         }
-    }
+    };
 
     const handleGetStarted = async () => {
         if (!user || !name || !location || roles.length === 0) {
@@ -137,8 +159,8 @@ export default function CompleteProfilePage() {
                                 onChange={(e) => setLocation(e.target.value)}
                                 className="flex-grow"
                             />
-                            <Button variant="outline" size="icon" onClick={handleDetectLocation} aria-label="Detect Location">
-                                <MapPin className="h-4 w-4" />
+                            <Button variant="outline" size="icon" onClick={handleDetectLocation} aria-label="Detect Location" disabled={detectingLocation}>
+                                {detectingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
                             </Button>
                         </div>
                          {detectedCoords && <p className="text-xs text-muted-foreground">Location captured: {detectedCoords.lat.toFixed(4)}, {detectedCoords.lng.toFixed(4)}</p>}
