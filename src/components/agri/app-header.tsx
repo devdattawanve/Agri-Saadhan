@@ -25,7 +25,8 @@ const pageTitles: { [key: string]: string } = {
   "/owner-dashboard": "Owner Dashboard",
   "/driver-dashboard": "Driver Dashboard",
   "/equipment": "Equipment Details",
-  "/booking": "Book Equipment"
+  "/booking": "Book Equipment",
+  "/profile": "Your Profile"
 };
 
 export function AppHeader() {
@@ -141,7 +142,7 @@ export function AppHeader() {
               ) : "My Account"}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
+            <DropdownMenuItem onClick={() => router.push('/profile')}>
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
