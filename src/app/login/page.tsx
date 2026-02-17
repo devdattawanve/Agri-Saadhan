@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ declare global {
     interface Window {
         recaptchaVerifier: RecaptchaVerifier;
         confirmationResult: any;
+        grecaptcha: any;
     }
 }
 
@@ -44,8 +44,9 @@ export default function LoginPage() {
             // Reset reCAPTCHA
             if (window.recaptchaVerifier) {
               window.recaptchaVerifier.render().then((widgetId) => {
-                // @ts-ignore
-                grecaptcha.reset(widgetId);
+                if (window.grecaptcha) {
+                    window.grecaptcha.reset(widgetId);
+                }
               });
             }
         } finally {
@@ -54,16 +55,16 @@ export default function LoginPage() {
     };
 
     // This effect sets up the reCAPTCHA verifier
-    useState(() => {
+    useEffect(() => {
         if (auth && !window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
                 'size': 'invisible',
                 'callback': () => {
                     // reCAPTCHA solved, allow signInWithPhoneNumber.
                 }
-            });
+            }, auth);
         }
-    });
+    }, [auth]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
