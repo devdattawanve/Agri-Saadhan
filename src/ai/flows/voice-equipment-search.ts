@@ -51,9 +51,9 @@ const voiceEquipmentSearchPrompt = ai.definePrompt({
 Your goal is to identify the type of equipment being requested, determine if there's an intent to rent, and extract any other relevant keywords.
 
 Consider the following rules:
-- If the query contains phrases like "chahiye" (need), "kiraaye par" (for rent), or similar, assume the user has a rental intent, and set `rentalIntent` to true.
+- If the query contains phrases like "chahiye" (need), "kiraaye par" (for rent), or similar, assume the user has a rental intent, and set \\\`rentalIntent\\\` to true.
 - Extract the specific equipment type requested. If no specific equipment type is mentioned but there are keywords related to general farm work, categorize it as "General Farm Equipment".
-- Collect any other descriptive words that might help in a search as `keywords`.
+- Collect any other descriptive words that might help in a search as \\\`keywords\\\`.
 
 Voice Query: "{{{voiceQuery}}}"
 `,
