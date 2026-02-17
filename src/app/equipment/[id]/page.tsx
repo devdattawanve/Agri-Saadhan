@@ -15,13 +15,14 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldCheck, MapPin, Clock, Phone, FileText, Tractor } from "lucide-react";
 import Link from "next/link";
-import { notFound, useSearchParams } from "next/navigation";
+import { notFound, useSearchParams, useParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import type { Equipment } from "@/lib/data";
 
-export default function EquipmentDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function EquipmentDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const searchParams = useSearchParams();
   const beneficiaryId = searchParams.get('beneficiaryId');
   const firestore = useFirestore();

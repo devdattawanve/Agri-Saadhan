@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { notFound, useRouter, useSearchParams } from "next/navigation";
+import { notFound, useRouter, useSearchParams, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, CheckCircle2, CircleDashed, Loader2 } from "lucide-react";
@@ -13,8 +13,9 @@ import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase 
 import { collection, doc, serverTimestamp } from "firebase/firestore";
 import type { Equipment } from "@/lib/data";
 
-export default function BookingPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function BookingPage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
