@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -61,6 +61,7 @@ export function AppHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left">
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <AppSidebar />
         </SheetContent>
       </Sheet>
