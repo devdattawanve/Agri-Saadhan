@@ -9,7 +9,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useFirestore, useCollection } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import Link from "next/link";
 import { User } from "lucide-react";
@@ -17,7 +17,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SahayakPage() {
     const firestore = useFirestore();
-    const usersColRef = collection(firestore, 'users');
+    const usersColRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'users');
+    }, [firestore]);
     const { data: users, isLoading } = useCollection(usersColRef);
 
     return (

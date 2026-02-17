@@ -7,13 +7,17 @@ import { VoiceSearch } from "@/components/agri/voice-search";
 import type { Equipment } from "@/lib/data";
 import type { VoiceEquipmentSearchOutput } from "@/ai/flows/voice-equipment-search";
 import { Button } from "@/components/ui/button";
-import { useFirestore, useCollection } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   const firestore = useFirestore();
-  const equipmentColRef = collection(firestore, 'equipment');
+  const equipmentColRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'equipment');
+  }, [firestore]);
+
   const { data: allEquipment, isLoading } = useCollection<Equipment>(equipmentColRef);
 
   const [filteredEquipment, setFilteredEquipment] = useState<Equipment[] | null>(null);
