@@ -21,14 +21,15 @@ import { doc } from "firebase/firestore";
 import type { Equipment } from "@/lib/data";
 
 export default function EquipmentDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const searchParams = useSearchParams();
   const beneficiaryId = searchParams.get('beneficiaryId');
   const firestore = useFirestore();
 
   const equipmentDocRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, 'equipment', params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, 'equipment', id);
+  }, [firestore, id]);
 
   const { data: equipment, isLoading } = useDoc<Equipment>(equipmentDocRef);
 

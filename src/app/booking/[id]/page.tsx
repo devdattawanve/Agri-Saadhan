@@ -14,6 +14,7 @@ import { collection, doc, serverTimestamp } from "firebase/firestore";
 import type { Equipment } from "@/lib/data";
 
 export default function BookingPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -27,9 +28,9 @@ export default function BookingPage({ params }: { params: { id: string } }) {
   const isSahayakBooking = !!beneficiaryId;
 
   const equipmentDocRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, 'equipment', params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, 'equipment', id);
+  }, [firestore, id]);
 
   const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
 
