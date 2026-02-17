@@ -130,8 +130,21 @@ export function AppHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              {userData?.name ? (
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{userData.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.phoneNumber}
+                  </p>
+                </div>
+              ) : "My Account"}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem disabled>
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>

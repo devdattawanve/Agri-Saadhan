@@ -14,8 +14,8 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
     const sahayakStatus = userData?.sahayakStatus;
 
     return (
-        <nav className="grid items-start px-4 text-sm font-medium">
-            <div className="mb-4 pt-4">
+        <nav className="grid items-start text-sm font-medium">
+            <div className="mb-4">
                 <Logo />
             </div>
             <Link
