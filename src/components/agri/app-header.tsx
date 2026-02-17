@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUser, Menu, LogOut, Users, Tractor } from "lucide-react";
+import { CircleUser, Menu, LogOut, Users, Tractor, Warehouse, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,22 +9,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Switch } from "../ui/switch";
-import { Label } from "../ui/label";
 import { useAuth, useUser, useDoc, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useMemo } from "react";
 
 const pageTitles: { [key: string]: string } = {
-  "/dashboard": "Mandi View",
+  "/dashboard": "Farmer Dashboard",
   "/sahayak": "Sahayak Dashboard",
+  "/owner-dashboard": "Owner Dashboard",
+  "/driver-dashboard": "Driver Dashboard",
   "/equipment": "Equipment Details",
   "/booking": "Book Equipment"
 };
@@ -49,13 +48,6 @@ export function AppHeader() {
     ? pageTitles[Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/')!] 
     : "Agri Saadhan";
 
-  const handleSahayakToggle = (checked: boolean) => {
-    if (checked) {
-        router.push('/sahayak');
-    } else {
-        router.push('/dashboard');
-    }
-  }
 
   const handleLogout = async () => {
     if (auth) {
@@ -71,9 +63,28 @@ export function AppHeader() {
           <Tractor className="h-6 w-6 text-primary" />
           <span className="sr-only">Agri Saadhan</span>
         </Link>
+
         <Link href="/dashboard" className={`transition-colors hover:text-foreground ${pathname.startsWith('/dashboard') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
-          Dashboard
+          Farmer
         </Link>
+        
+        {userData?.roles?.includes('EQUIPMENT_OWNER') && (
+            <Link href="/owner-dashboard" className={`transition-colors hover:text-foreground ${pathname.startsWith('/owner-dashboard') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+                Owner
+            </Link>
+        )}
+
+        {userData?.roles?.includes('DRIVER') && (
+            <Link href="/driver-dashboard" className={`transition-colors hover:text-foreground ${pathname.startsWith('/driver-dashboard') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+                Driver
+            </Link>
+        )}
+
+        {isSahayakVerified && (
+            <Link href="/sahayak" className={`transition-colors hover:text-foreground ${pathname.startsWith('/sahayak') ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
+                Sahayak
+            </Link>
+        )}
       </nav>
       <Sheet>
         <SheetTrigger asChild>
@@ -84,7 +95,7 @@ export function AppHeader() {
         </SheetTrigger>
         <SheetContent side="left">
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-          <AppSidebar />
+          <AppSidebar userData={userData} />
         </SheetContent>
       </Sheet>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
@@ -100,16 +111,6 @@ export function AppHeader() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {isSahayakVerified && (
-              <DropdownMenuGroup>
-                  <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                      <Users className="mr-2 h-4 w-4" />
-                      <Label htmlFor="sahayak-mode" className="flex-grow font-normal">Sahayak Mode</Label>
-                      <Switch id="sahayak-mode" checked={pathname.startsWith('/sahayak')} onCheckedChange={handleSahayakToggle} />
-                  </div>
-              </DropdownMenuGroup>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />

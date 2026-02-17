@@ -26,14 +26,27 @@
           "type": "string",
           "description": "The user's preferred language for the application interface."
         },
-        "isSahayak": {
-          "type": "boolean",
-          "description": "DEPRECATED in favor of sahayakStatus. Indicates if the user has the 'Sahayak' (agent) role."
+        "roles": {
+          "type": "array",
+          "description": "The roles assigned to the user.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "FARMER",
+              "EQUIPMENT_OWNER",
+              "DRIVER",
+              "SAHAYAK"
+            ]
+          }
         },
         "sahayakStatus": {
           "type": "string",
           "description": "The verification status of a Sahayak.",
-          "enum": ["NONE", "PENDING", "VERIFIED"]
+          "enum": [
+            "NONE",
+            "PENDING",
+            "VERIFIED"
+          ]
         },
         "createdAt": {
           "type": "string",
@@ -51,6 +64,7 @@
         "name",
         "contactPhoneNumber",
         "villageTehsil",
+        "roles",
         "sahayakStatus"
       ]
     },
@@ -60,14 +74,32 @@
       "type": "object",
       "description": "Represents a piece of agricultural equipment available for rental.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "geohash": { "type": "string", "description": "Geohash for location-based queries." },
-        "latitude": { "type": "number" },
-        "longitude": { "type": "number" }
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "geohash": {
+          "type": "string",
+          "description": "Geohash for location-based queries."
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        }
       },
-      "required": ["id", "name", "ownerId", "geohash"]
+      "required": [
+        "id",
+        "name",
+        "ownerId",
+        "geohash"
+      ]
     },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -75,16 +107,51 @@
       "type": "object",
       "description": "Represents a rental transaction for a piece of equipment.",
       "properties": {
-        "id": { "type": "string" },
-        "equipmentId": { "type": "string" },
-        "farmerId": { "type": "string", "description": "The end-user (beneficiary) of the equipment." },
-        "ownerId": { "type": "string" },
-        "sahayakId": { "type": "string", "description": "UID of the Sahayak who created the booking, if applicable." },
-        "createdBy": { "type": "string", "description": "UID of the user who initiated the booking." },
-        "beneficiary": { "type": "string", "description": "UID of the farmer who will use the equipment." },
-        "commissionEligible": { "type": "boolean" },
-        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string"
+        },
+        "equipmentId": {
+          "type": "string"
+        },
+        "farmerId": {
+          "type": "string",
+          "description": "The end-user (beneficiary) of the equipment."
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "sahayakId": {
+          "type": "string",
+          "description": "UID of the Sahayak who created the booking, if applicable."
+        },
+        "driverId": {
+          "type": "string",
+          "description": "UID of the Driver assigned to the booking."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who initiated the booking."
+        },
+        "beneficiary": {
+          "type": "string",
+          "description": "UID of the farmer who will use the equipment."
+        },
+        "commissionEligible": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "confirmed",
+            "completed",
+            "cancelled"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
       "required": [
         "id",

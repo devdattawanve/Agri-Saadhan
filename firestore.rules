@@ -40,12 +40,12 @@ service cloud.firestore {
 
     // Rules for the 'bookings' collection
     match /bookings/{bookingId} {
-      // Users can see bookings where they are the farmer or the owner.
-      // A Sahayak can see bookings they created.
+      // Users can see bookings where they are the farmer, the owner, the driver, or the creator (Sahayak).
       allow get: if isSignedIn() && (
                     resource.data.farmerId == request.auth.uid || 
                     resource.data.ownerId == request.auth.uid ||
-                    resource.data.sahayakId == request.auth.uid
+                    resource.data.sahayakId == request.auth.uid ||
+                    resource.data.driverId == request.auth.uid
                   );
 
       // Authenticated users can list bookings, but client-side queries must enforce security.
