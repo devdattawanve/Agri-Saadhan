@@ -36,17 +36,24 @@ export default function LoginPage() {
             router.push("/verify-otp");
         } catch (error: any) {
             console.error("Error sending OTP:", error);
+
+            let description = "Failed to send OTP. Please try again.";
+            if (error.code === 'auth/operation-not-allowed') {
+                description = "Phone number sign-in is not enabled for this project. Please enable it in the Firebase console.";
+            } else {
+                description = error.message || description;
+            }
+
             toast({
                 variant: "destructive",
-                title: "Error",
-                description: error.message || "Failed to send OTP. Please try again.",
+                title: "Authentication Error",
+                description: description,
             });
+            
             // Reset reCAPTCHA
-            if (window.recaptchaVerifier) {
+            if (window.grecaptcha && window.recaptchaVerifier) {
               window.recaptchaVerifier.render().then((widgetId) => {
-                if (window.grecaptcha) {
-                    window.grecaptcha.reset(widgetId);
-                }
+                window.grecaptcha.reset(widgetId);
               });
             }
         } finally {
@@ -63,6 +70,7 @@ export default function LoginPage() {
                     // reCAPTCHA solved, allow signInWithPhoneNumber.
                 }
             });
+            window.recaptchaVerifier.render();
         }
     }, [auth]);
 
