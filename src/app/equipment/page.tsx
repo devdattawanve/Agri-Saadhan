@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { EquipmentCard } from "@/components/agri/equipment-card";
 import { VoiceSearch } from "@/components/agri/voice-search";
 import type { Equipment } from "@/lib/data";
 import type { VoiceEquipmentSearchOutput } from "@/ai/flows/voice-equipment-search";
 import { Button } from "@/components/ui/button";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EquipmentPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const equipmentColRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'equipment');
@@ -19,20 +20,29 @@ export default function EquipmentPage() {
 
   const { data: allEquipment, isLoading } = useCollection<Equipment>(equipmentColRef);
 
+  // Filter out the owner's own equipment from the list.
+  const equipmentForDisplay = useMemo(() => {
+    if (!allEquipment) return null;
+    if (!user) return allEquipment; // If user isn't loaded yet, show all to avoid a flash of content change.
+    return allEquipment.filter(item => item.ownerId !== user.uid);
+  }, [allEquipment, user]);
+
   const [filteredEquipment, setFilteredEquipment] = useState<Equipment[] | null>(null);
   const isFiltered = filteredEquipment !== null;
 
   const getEquipmentList = () => {
-    return isFiltered ? filteredEquipment : allEquipment;
+    // If a search is active, return the filtered list, otherwise return the base list.
+    return isFiltered ? filteredEquipment : equipmentForDisplay;
   }
 
   const handleSearch = (filters: VoiceEquipmentSearchOutput | null) => {
-    if (!filters || !allEquipment) {
+    if (!filters || !equipmentForDisplay) {
         setFilteredEquipment(null);
         return;
     }
-
-    let equipment = [...allEquipment];
+    
+    // Always start filtering from the list that excludes the owner's equipment.
+    let equipment = [...equipmentForDisplay];
     if (filters.equipmentType && filters.equipmentType !== "General Farm Equipment") {
       equipment = equipment.filter(e => e.type.toLowerCase() === filters.equipmentType.toLowerCase());
     }
