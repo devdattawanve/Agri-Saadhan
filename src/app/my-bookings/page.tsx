@@ -8,6 +8,7 @@ import type { Booking } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BookingCard } from "@/components/agri/booking-card";
+import { useMemo } from "react";
 
 export default function MyBookingsPage() {
     const { user } = useUser();
@@ -15,15 +16,21 @@ export default function MyBookingsPage() {
 
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        // Query for bookings where the current user is the beneficiary, ordered by creation date
+        // Query for bookings where the user is a participant. This is more secure and flexible.
         return query(
             collection(firestore, "bookings"),
-            where("beneficiary", "==", user.uid),
+            where("participants", "array-contains", user.uid),
             orderBy("createdAt", "desc")
         );
     }, [user, firestore]);
 
-    const { data: bookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+
+    // Filter client-side to only show bookings where the user is the beneficiary
+    const bookings = useMemo(() => {
+        if (!allUserBookings || !user) return [];
+        return allUserBookings.filter(b => b.beneficiary === user.uid);
+    }, [allUserBookings, user]);
 
     const renderContent = () => {
       if (isLoading) {

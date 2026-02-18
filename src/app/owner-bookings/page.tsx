@@ -26,15 +26,21 @@ export default function OwnerBookingsPage() {
 
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        // Query for bookings where the current user is the owner, ordered by creation date
+        // Query for bookings where the user is a participant to get all relevant bookings.
         return query(
             collection(firestore, "bookings"),
-            where("ownerId", "==", user.uid),
+            where("participants", "array-contains", user.uid),
             orderBy("createdAt", "desc")
         );
     }, [user, firestore]);
 
-    const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+
+    // Filter client-side for bookings where the user is the owner.
+    const ownerBookings = useMemo(() => {
+        if (!allUserBookings || !user) return [];
+        return allUserBookings.filter(b => b.ownerId === user.uid);
+    }, [allUserBookings, user]);
     
     const pendingBookings = useMemo(() => ownerBookings?.filter(b => b.status === 'pending') ?? [], [ownerBookings]);
     const otherBookings = useMemo(() => ownerBookings?.filter(b => b.status !== 'pending') ?? [], [ownerBookings]);

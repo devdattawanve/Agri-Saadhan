@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     function hasValidParticipants(bookingData) {
-      return bookingData.participants.hasAll([bookingData.ownerId, bookingData.beneficiary, request.auth.uid]);
+      return request.resource.data.participants.hasAll([bookingData.ownerId, bookingData.beneficiary, request.auth.uid]);
     }
 
     // =================================
@@ -44,12 +44,9 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
-      
-      // Allow users to list their own bookings (as beneficiary)
-      allow list: if isSignedIn() && request.query.beneficiary == request.auth.uid;
-      // Allow owners to list bookings for their equipment
-      allow list: if isSignedIn() && request.query.ownerId == request.auth.uid;
+      // This single rule allows a user to read any document they are a participant in.
+      // For collection queries (list), this forces the query to include `where('participants', 'array-contains', auth.uid)`.
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
       
       allow create: if isSignedIn()
                       && request.resource.data.createdBy == request.auth.uid
