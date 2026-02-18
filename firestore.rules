@@ -54,12 +54,11 @@ service cloud.firestore {
       // A more secure rule would filter by user involvement.
       allow list: if isSignedIn();
 
-      // A user can create a booking for themselves (beneficiary is self).
-      // A verified Sahayak can create a booking for another user (beneficiary is different).
-      allow create: if isSignedIn() && (
-                      (request.resource.data.createdBy == request.auth.uid && request.resource.data.beneficiary == request.auth.uid) ||
-                      (isVerifiedSahayak(request.auth.uid) && request.resource.data.createdBy == request.auth.uid)
-                    );
+      // A user can create a booking if they are the creator, and they are either booking for themselves
+      // or they are a verified Sahayak.
+      allow create: if isSignedIn() &&
+                       request.resource.data.createdBy == request.auth.uid &&
+                       (request.resource.data.beneficiary == request.auth.uid || isVerifiedSahayak(request.auth.uid));
 
       // The owner, beneficiary, or creator (Sahayak) of a booking can update it.
       allow update: if isSignedIn() && (
