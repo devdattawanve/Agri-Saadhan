@@ -52,7 +52,12 @@ service cloud.firestore {
     match /bookings/{bookingId} {
       // READ
       allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
-      allow list: if isSignedIn() && (request.auth.uid == request.query.where.beneficiary || request.auth.uid == request.query.where.ownerId);
+      
+      // Allow a user to list bookings where they are the beneficiary
+      allow list: if isSignedIn() && request.auth.uid == request.query.where.beneficiary;
+
+      // Allow a user to list bookings where they are the owner of the equipment
+      allow list: if isSignedIn() && request.auth.uid == request.query.where.ownerId;
 
       
       // CREATE: Strict validation for new bookings.
