@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -154,65 +153,69 @@ export function AppHeader() {
           </>
         )}
       </nav>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className={cn("shrink-0 md:hidden", isWorkMode && "border-amber-400 text-white hover:bg-amber-500")}>
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-          <AppSidebar userData={userData} />
-        </SheetContent>
-      </Sheet>
+      {isClient &&
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className={cn("shrink-0 md:hidden", isWorkMode && "border-amber-400 text-white hover:bg-amber-500")}>
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+            <AppSidebar userData={userData} />
+          </SheetContent>
+        </Sheet>
+      }
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <div className="ml-auto flex-1 sm:flex-initial">
           <h1 className={cn("text-xl font-bold font-headline", isWorkMode && "text-white")}>{title}</h1>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={userData?.profilePictureUrl || undefined} alt={userData?.name} />
-                <AvatarFallback>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                  ) : (
-                    userData?.name ? userData.name[0].toUpperCase() : <CircleUser className="h-5 w-5" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              {isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              ) : userData?.name ? (
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userData.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user?.phoneNumber}
-                  </p>
-                </div>
-              ) : "My Account"}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/profile')}>
-              <UserIcon className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isClient &&
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={userData?.profilePictureUrl || undefined} alt={userData?.name} />
+                  <AvatarFallback>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    ) : (
+                      userData?.name ? userData.name[0].toUpperCase() : <CircleUser className="h-5 w-5" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                {isLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                ) : userData?.name ? (
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{userData.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.phoneNumber}
+                    </p>
+                  </div>
+                ) : "My Account"}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <UserIcon className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
       </div>
     </header>
   );
