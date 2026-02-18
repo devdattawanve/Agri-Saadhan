@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useUser, useFirestore, addDocumentNonBlocking } from "@/firebase";
@@ -15,8 +16,57 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Loader2, LinkIcon, UploadCloud, IndianRupee } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const equipmentTypes = ["Tractor", "Rotavator", "Plow", "Harvester", "Sprayer", "General Farm Equipment"];
+
+const AddEquipmentPageSkeleton = () => (
+    <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-4 w-3/4 mt-2" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-20 w-full" />
+            </div>
+            
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-40 w-full" />
+            </div>
+
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+
+            <div className="space-y-2">
+                 <Skeleton className="h-4 w-32" />
+                 <Skeleton className="h-10 w-full" />
+            </div>
+            
+             <div className="space-y-2">
+                 <Skeleton className="h-4 w-32" />
+                 <Skeleton className="h-10 w-full" />
+            </div>
+
+            <Skeleton className="h-12 w-full mt-4" />
+        </CardContent>
+    </Card>
+);
 
 export default function AddEquipmentPage() {
     const { user, isUserLoading } = useUser();
@@ -41,6 +91,11 @@ export default function AddEquipmentPage() {
     
     const [loading, setLoading] = useState(false);
     const [detectingLocation, setDetectingLocation] = useState(false);
+    
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -145,6 +200,9 @@ export default function AddEquipmentPage() {
         }
     };
 
+    if (!isMounted) {
+        return <AddEquipmentPageSkeleton />;
+    }
 
     return (
         <Card className="w-full max-w-2xl mx-auto">
@@ -273,3 +331,6 @@ export default function AddEquipmentPage() {
         </Card>
     );
 }
+
+
+    
