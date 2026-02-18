@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -28,15 +28,22 @@ export default function OwnerBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"),
-            where("ownerId", "==", user.uid),
-            orderBy("createdAt", "desc")
+            where("participants", "array-contains", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: bookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    
+    // Filter to get only bookings for equipment the user owns, and sort them
+    const ownerBookings = useMemo(() => {
+        if (!allUserBookings) return null;
+        return allUserBookings
+            .filter(b => b.ownerId === user?.uid)
+            .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    }, [allUserBookings, user]);
 
-    const pendingBookings = useMemo(() => bookings?.filter(b => b.status === 'pending') ?? [], [bookings]);
-    const otherBookings = useMemo(() => bookings?.filter(b => b.status !== 'pending') ?? [], [bookings]);
+    const pendingBookings = useMemo(() => ownerBookings?.filter(b => b.status === 'pending') ?? [], [ownerBookings]);
+    const otherBookings = useMemo(() => ownerBookings?.filter(b => b.status !== 'pending') ?? [], [ownerBookings]);
 
     return (
         <div className="space-y-8">

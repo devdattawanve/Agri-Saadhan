@@ -1,28 +1,38 @@
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Booking } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BookingCard } from "@/components/agri/booking-card";
+import { useMemo } from "react";
 
 export default function MyBookingsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
+    // Query for all bookings where the user is a participant
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"), 
-            where("beneficiary", "==", user.uid),
-            orderBy("createdAt", "desc")
+            where("participants", "array-contains", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: bookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+
+    // Filter to get only bookings where the user is the beneficiary, and sort them
+    const bookings = useMemo(() => {
+        if (!allUserBookings) return null;
+        return allUserBookings
+            .filter(b => b.beneficiary === user?.uid)
+            .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    }, [allUserBookings, user]);
+
 
     const renderContent = () => {
       if (isLoading) {
