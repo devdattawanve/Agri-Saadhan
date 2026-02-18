@@ -28,16 +28,18 @@ export default function OwnerBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"),
-            where("ownerId", "==", user.uid)
+            where("participants", "array-contains", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allOwnerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
     
     const sortedBookings = useMemo(() => {
-        if (!ownerBookings) return null;
-        return ownerBookings.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    }, [ownerBookings]);
+        if (!allOwnerBookings) return null;
+        return allOwnerBookings
+            .filter(b => b.ownerId === user?.uid)
+            .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    }, [allOwnerBookings, user]);
 
     const pendingBookings = useMemo(() => sortedBookings?.filter(b => b.status === 'pending') ?? [], [sortedBookings]);
     const otherBookings = useMemo(() => sortedBookings?.filter(b => b.status !== 'pending') ?? [], [sortedBookings]);

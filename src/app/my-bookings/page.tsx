@@ -18,17 +18,18 @@ export default function MyBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"),
-            where("beneficiary", "==", user.uid)
+            where("participants", "array-contains", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: allBeneficiaryBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
 
     const bookings = useMemo(() => {
-        if (!allBeneficiaryBookings) return null;
-        return allBeneficiaryBookings
+        if (!allUserBookings) return null;
+        return allUserBookings
+            .filter(b => b.beneficiary === user?.uid)
             .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    }, [allBeneficiaryBookings]);
+    }, [allUserBookings, user]);
 
 
     const renderContent = () => {

@@ -50,15 +50,12 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // READ
+      // READ: Users can get a specific booking if they are a participant.
       allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
       
-      // Allow a user to list bookings where they are the beneficiary
-      allow list: if isSignedIn() && request.auth.uid == request.query.where.beneficiary;
-
-      // Allow a user to list bookings where they are the owner of the equipment
-      allow list: if isSignedIn() && request.auth.uid == request.query.where.ownerId;
-
+      // LIST: Users can list all bookings where they are a participant.
+      // The client-side code will then filter this list as needed.
+      allow list: if isSignedIn() && request.auth.uid in resource.data.participants;
       
       // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
