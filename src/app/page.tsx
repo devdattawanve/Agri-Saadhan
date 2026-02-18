@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/agri/logo";
 import { useUser } from "@/firebase";
@@ -68,15 +68,6 @@ export default function OnboardingPage() {
               ))}
             </div>
           </CardContent>
-          <CardFooter className="flex-col gap-4 pt-6">
-            <p className="text-sm font-bold text-muted-foreground">
-              🇮🇳 Made in India
-            </p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span>Partner FPOs</span>
-              <span>Partner Banks</span>
-            </div>
-          </CardFooter>
         </Card>
       </div>
     </div>
