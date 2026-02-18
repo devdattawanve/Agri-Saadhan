@@ -30,7 +30,8 @@ export default function EquipmentPage() {
   const equipmentList = useMemo(() => {
     if (!allEquipment) return [];
     
-    let equipment = [...allEquipment];
+    // Filter out test data or unwanted items by name.
+    let equipment = allEquipment.filter(e => !e.name.toLowerCase().includes('john'));
     
     // Filter by selected equipment type
     if (selectedType) {
