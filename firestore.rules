@@ -67,7 +67,7 @@ service cloud.firestore {
       // READ/LIST: User must be in the 'participants' array.
       // List queries must use an 'array-contains' filter on the participants field.
       allow get: if isSignedIn() && isBookingParticipant(resource.data);
-      allow list: if isSignedIn() && request.query.where.participants.hasAny([request.auth.uid]);
+      allow list: if isSignedIn() && request.query.where.participants.has(request.auth.uid);
       
       // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
