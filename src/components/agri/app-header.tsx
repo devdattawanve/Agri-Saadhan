@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useState, useEffect } from "react";
 import { CircleUser, Menu, LogOut, Users, Tractor, Warehouse, User as UserIcon, Home, Briefcase, Book } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +42,11 @@ export function AppHeader() {
   const firestore = useFirestore();
   const { user } = useUser();
   
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
@@ -48,7 +55,7 @@ export function AppHeader() {
   const { data: userData } = useDoc(userDocRef);
   
   const beneficiaryId = searchParams.get('beneficiaryId');
-  const isWorkMode = !!beneficiaryId;
+  const isWorkMode = isClient && !!beneficiaryId;
 
   const isFarmer = userData?.roles?.includes('FARMER');
   const isOwner = userData?.roles?.includes('EQUIPMENT_OWNER');
