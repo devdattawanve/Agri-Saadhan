@@ -34,9 +34,10 @@ service cloud.firestore {
     match /equipment/{equipmentId} {
         // Any authenticated user can view equipment listings.
         allow read: if isSignedIn();
-        // Only the owner of the equipment can create, update, or delete it.
-        // We check the incoming resource data, not the existing one.
-        allow create, update, delete: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+        // Only the owner of the equipment can create it.
+        allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+        // Only the owner of the equipment can update or delete it.
+        allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // Rules for the 'bookings' collection

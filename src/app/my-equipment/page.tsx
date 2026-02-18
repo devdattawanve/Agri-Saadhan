@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,15 +11,29 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, doc, deleteDoc } from "firebase/firestore";
 import Link from "next/link";
-import { PlusCircle, Tractor } from "lucide-react";
+import { PlusCircle, Tractor, Trash2, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function MyEquipmentPage() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     const equipmentQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -26,6 +41,27 @@ export default function MyEquipmentPage() {
     }, [user, firestore]);
 
     const { data: equipment, isLoading } = useCollection(equipmentQuery);
+
+    const handleDelete = async (equipmentId: string) => {
+        if (!firestore) return;
+        setIsDeleting(equipmentId);
+        try {
+            const equipmentRef = doc(firestore, 'equipment', equipmentId);
+            await deleteDoc(equipmentRef);
+            toast({
+                title: "Equipment Deleted",
+                description: "Your equipment has been removed from the marketplace.",
+            });
+        } catch (error: any) {
+             toast({
+                variant: "destructive",
+                title: "Deletion Failed",
+                description: error.message || "There was an error deleting your equipment.",
+            });
+        } finally {
+            setIsDeleting(null);
+        }
+    };
 
     return (
         <div>
@@ -67,7 +103,33 @@ export default function MyEquipmentPage() {
                             <CardDescription>{item.type}</CardDescription>
                         </CardContent>
                         <CardFooter className="mt-auto">
-                            <Button variant="outline" className="w-full">Manage Listing</Button>
+                           <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full" disabled={isDeleting === item.id}>
+                                        {isDeleting === item.id ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                        )}
+                                        Delete Listing
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete your
+                                            equipment listing and remove it from the marketplace.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(item.id)}>
+                                            Continue
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </CardFooter>
                     </Card>
                 ))}
