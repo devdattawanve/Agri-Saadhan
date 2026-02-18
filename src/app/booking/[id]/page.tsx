@@ -9,8 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
-import { collection, doc, serverTimestamp, query, where } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
+import { collection, doc, serverTimestamp } from "firebase/firestore";
 import type { Equipment, Booking } from "@/lib/data";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,6 +20,8 @@ import { DateRange } from "react-day-picker";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 export default function BookingPage() {
     const params = useParams();
@@ -44,18 +46,9 @@ export default function BookingPage() {
     const equipmentDocRef = useMemoFirebase(() => firestore && id ? doc(firestore, 'equipment', id) : null, [firestore, id]);
     const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
 
-    const bookingsQuery = useMemoFirebase(() => firestore && id ? query(collection(firestore, 'bookings'), where('equipmentId', '==', id), where('status', '==', 'confirmed')) : null, [firestore, id]);
-    const { data: existingBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
-
     const disabledDates = useMemo(() => {
-        const dates: (Date | { from: Date; to: Date; })[] = [{ before: startOfDay(new Date()) }];
-        existingBookings?.forEach(booking => {
-            if (booking.startDate?.toDate && booking.endDate?.toDate) {
-                dates.push({ from: booking.startDate.toDate(), to: booking.endDate.toDate() });
-            }
-        });
-        return dates;
-    }, [existingBookings]);
+        return [{ before: startOfDay(new Date()) }];
+    }, []);
     
     useEffect(() => {
         if (equipment && date?.from && date?.to) {
@@ -87,14 +80,27 @@ export default function BookingPage() {
         }
         setLoading(true);
 
-        const bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any } = {
+        const creator = user.uid;
+        const beneficiary = isSahayakBooking && beneficiaryId ? beneficiaryId : user.uid;
+        const owner = equipment.ownerId;
+        const sahayak = isSahayakBooking ? user.uid : null;
+        
+        const participants = [owner, creator, beneficiary];
+        if (sahayak) {
+            participants.push(sahayak);
+        }
+        const uniqueParticipants = [...new Set(participants)];
+
+
+        const bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt' | 'participants'> & { createdAt: any, updatedAt: any, participants: string[] } = {
             equipmentId: id,
             equipmentName: equipment.name,
             equipmentImageUrl: equipment.imageUrl,
             ownerId: equipment.ownerId,
-            createdBy: user.uid,
-            beneficiary: isSahayakBooking && beneficiaryId ? beneficiaryId : user.uid,
-            sahayakId: isSahayakBooking ? user.uid : undefined,
+            createdBy: creator,
+            beneficiary: beneficiary,
+            sahayakId: sahayak || undefined,
+            participants: uniqueParticipants,
 
             status: 'pending',
             startDate: date.from,
@@ -138,7 +144,7 @@ export default function BookingPage() {
         }
     };
 
-    if (isEquipmentLoading || areBookingsLoading) {
+    if (isEquipmentLoading) {
         return <div className="container mx-auto py-8 max-w-4xl"><Skeleton className="h-96 w-full" /></div>;
     }
 
@@ -186,7 +192,13 @@ export default function BookingPage() {
                         <CardHeader>
                             <CardTitle className="font-headline text-xl">1. Select Booking Duration</CardTitle>
                         </CardHeader>
-                        <CardContent className="flex justify-center">
+                        <CardContent className="flex flex-col items-center gap-4">
+                             <Alert variant="destructive">
+                                <AlertTitle>Notice</AlertTitle>
+                                <AlertDescription>
+                                    The calendar does not show existing bookings. Please coordinate with the owner to confirm availability before booking.
+                                </AlertDescription>
+                            </Alert>
                             <Popover>
                                 <PopoverTrigger asChild>
                                 <Button

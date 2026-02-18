@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, orderBy } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -26,16 +26,21 @@ export default function OwnerBookingsPage() {
 
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        // Sort by creation date to show newest first
-        return query(collection(firestore, "bookings"), where("ownerId", "==", user.uid));
+        return query(
+            collection(firestore, "bookings"),
+            where("participants", "array-contains", user.uid),
+            orderBy("createdAt", "desc")
+        );
     }, [user, firestore]);
 
     const { data: bookings, isLoading } = useCollection<Booking>(bookingsQuery);
 
     const sortedBookings = useMemo(() => {
         if (!bookings) return [];
-        return bookings.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    }, [bookings]);
+        // The query is already sorted, but we filter here for display.
+        // We only want to show bookings for equipment the user owns.
+        return bookings.filter(b => b.ownerId === user?.uid);
+    }, [bookings, user]);
 
     const pendingBookings = useMemo(() => sortedBookings.filter(b => b.status === 'pending'), [sortedBookings]);
     const otherBookings = useMemo(() => sortedBookings.filter(b => b.status !== 'pending'), [sortedBookings]);

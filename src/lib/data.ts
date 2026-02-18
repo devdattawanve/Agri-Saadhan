@@ -37,6 +37,7 @@ export interface Booking {
     beneficiary: string;
     sahayakId?: string;
     driverId?: string;
+    participants: string[];
     status: 'pending' | 'confirmed' | 'rejected' | 'ongoing' | 'completed' | 'cancelled';
     
     startDate: Timestamp;

@@ -12,76 +12,68 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Checks if the user's profile exists AND their sahayakStatus is VERIFIED.
     function isVerifiedSahayak(userId) {
-      // Robust check: ensures user document exists before trying to access its data.
-      return isSignedIn() && 
-             exists(/databases/$(database)/documents/users/$(userId)) && 
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(userId)) &&
              get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
     }
 
-    // A user can read a booking if they are the creator, beneficiary, equipment owner, or sahayak.
+    // Checks if the user's UID is in the booking's participants array.
     function isBookingParticipant(booking) {
-        let uid = request.auth.uid;
-        return uid == booking.createdBy ||
-               uid == booking.beneficiary ||
-               uid == booking.ownerId ||
-               uid == booking.sahayakId;
+        return request.auth.uid in booking.participants;
     }
     
-    // Validates that the ownerId in a new booking matches the actual owner of the equipment.
-    // This is the critical cross-document check to ensure data integrity.
-    function isCorrectEquipmentOwner(booking) {
-        let equipmentDoc = get(/databases/$(database)/documents/equipment/$(booking.equipmentId)).data;
-        return booking.ownerId == equipmentDoc.ownerId;
+    // Validates that the ownerId in new booking data matches the actual owner of the equipment.
+    function isCorrectEquipmentOwner(bookingData) {
+        let equipmentDoc = get(/databases/$(database)/documents/equipment/$(bookingData.equipmentId)).data;
+        return bookingData.ownerId == equipmentDoc.ownerId;
+    }
+
+    // Validates that the participants array in new booking data is correctly formed.
+    function hasValidParticipants(bookingData) {
+      return request.auth.uid in bookingData.participants &&
+             bookingData.beneficiary in bookingData.participants &&
+             bookingData.ownerId in bookingData.participants;
     }
 
     // USERS
     match /users/{userId} {
-      // Anyone signed in can view user profiles (for owner/driver details).
-      allow get: if isSignedIn();
-      // Users can only create, update, or delete their own profile.
+      allow read: if isSignedIn();
       allow write: if isOwner(userId);
-      // Verified agents can list users to book on their behalf.
       allow list: if isVerifiedSahayak(request.auth.uid);
     }
     
     // EQUIPMENT
     match /equipment/{equipmentId} {
-        // Anyone signed in can browse equipment.
         allow read: if isSignedIn();
-        // An owner can create/update/delete their own equipment listings.
-        // Rule ensures the ownerId in the document matches the user's auth UID.
         allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow update, delete: if resource.data.ownerId == request.auth.uid;
     }
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // Only participants of a booking can read it.
-      allow get, list: if isSignedIn() && isBookingParticipant(resource.data);
-
-      // --- CREATE RULES ---
+      // READ / LIST
+      allow get: if isSignedIn() && isBookingParticipant(resource.data);
+      allow list: if isSignedIn() && request.auth.uid in request.query.where.participants;
+      
+      // CREATE
       allow create: if isSignedIn()
-                      // 1. The creator must be the authenticated user.
                       && request.resource.data.createdBy == request.auth.uid
-                      // 2. The initial status must be 'pending'.
                       && request.resource.data.status == 'pending'
-                      // 3. The ownerId in the booking data must match the actual equipment owner.
                       && isCorrectEquipmentOwner(request.resource.data)
-                      // 4. EITHER the user is booking for themself OR they are a verified sahayak.
+                      && hasValidParticipants(request.resource.data)
                       && (request.resource.data.beneficiary == request.auth.uid || isVerifiedSahayak(request.auth.uid));
 
-      // --- UPDATE RULES ---
-      // Allow the equipment OWNER to accept ('confirmed') or reject the booking.
-      // They can only update the 'status' and 'updatedAt' fields.
+      // UPDATE
+      // Owner can confirm/reject a pending booking
       allow update: if isSignedIn()
                       && request.auth.uid == resource.data.ownerId
                       && resource.data.status == 'pending'
                       && (request.resource.data.status == 'confirmed' || request.resource.data.status == 'rejected')
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
 
-      // Allow the booking CREATOR to cancel a pending booking.
-      // They can only update the 'status' and 'updatedAt' fields.
+      // Creator can cancel a pending booking
       allow update: if isSignedIn()
                       && request.auth.uid == resource.data.createdBy
                       && resource.data.status == 'pending'
