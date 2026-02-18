@@ -10,6 +10,7 @@ import { Logo } from "@/components/agri/logo";
 import { useAuth } from "@/firebase";
 import { signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 declare global {
     interface Window {
@@ -25,6 +26,11 @@ export default function LoginPage() {
     const { toast } = useToast();
     const [phoneNumber, setPhoneNumber] = useState("");
     const [loading, setLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const handleSendOtp = async () => {
         if (!auth) return;
@@ -63,7 +69,7 @@ export default function LoginPage() {
 
     // This effect sets up the reCAPTCHA verifier
     useEffect(() => {
-        if (auth && !window.recaptchaVerifier) {
+        if (isMounted && auth && !window.recaptchaVerifier) {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 'size': 'invisible',
                 'callback': () => {
@@ -72,7 +78,7 @@ export default function LoginPage() {
             });
             window.recaptchaVerifier.render();
         }
-    }, [auth]);
+    }, [auth, isMounted]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -84,27 +90,42 @@ export default function LoginPage() {
           <CardDescription>Enter your mobile number to login</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">Mobile Number</Label>
-            <div className="flex items-center gap-2">
-              <span className="rounded-md border bg-muted px-3 py-2 text-sm">+91</span>
-              <Input 
-                id="phone" 
-                type="tel" 
-                placeholder="98765 43210" 
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
-              />
+          {!isMounted ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Mobile Number</Label>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md border bg-muted px-3 py-2 text-sm">+91</span>
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-full" />
             </div>
-          </div>
-          <Button 
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
-            onClick={handleSendOtp}
-            disabled={loading || phoneNumber.length !== 10}
-          >
-            {loading ? "Sending OTP..." : "Send OTP"}
-          </Button>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Mobile Number</Label>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md border bg-muted px-3 py-2 text-sm">+91</span>
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    placeholder="98765 43210" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+                  />
+                </div>
+              </div>
+              <Button 
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+                onClick={handleSendOtp}
+                disabled={loading || phoneNumber.length !== 10}
+              >
+                {loading ? "Sending OTP..." : "Send OTP"}
+              </Button>
+            </>
+          )}
         </CardContent>
         <CardFooter className="flex-col gap-4">
            <p className="text-sm font-bold text-muted-foreground">
