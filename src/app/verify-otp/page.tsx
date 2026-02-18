@@ -88,7 +88,7 @@ export default function VerifyOtpPage() {
                 </CardContent>
                 <CardFooter className="flex-col gap-4">
                     <p className="text-sm font-bold text-muted-foreground">
-                        🇮🇳 Made in India
+                        Made in India
                     </p>
                 </CardFooter>
             </Card>
