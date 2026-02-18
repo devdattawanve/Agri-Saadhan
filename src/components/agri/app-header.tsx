@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CircleUser, Menu, LogOut, Users, Tractor, Warehouse, User as UserIcon, Home, Briefcase, Book } from "lucide-react";
+import { CircleUser, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,49 +11,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { AppSidebar } from "./app-sidebar";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const pageTitles: { [key: string]: string } = {
-  "/dashboard": "Home",
+  "/dashboard": "Dashboard",
   "/equipment": "Equipment Marketplace",
   "/my-bookings": "My Bookings",
   "/my-equipment": "My Equipment",
+  "/owner-dashboard": "Owner Dashboard",
   "/owner-bookings": "Bookings Received",
   "/sahayak": "Sahayak Dashboard",
   "/driver-dashboard": "Driver Dashboard",
   "/equipment/[id]": "Equipment Details",
-  "/booking": "Book Equipment",
-  "/profile": "Your Profile"
+  "/booking/[id]": "Book Equipment",
+  "/profile": "Your Profile",
+  "/my-equipment/add": "Add Equipment",
 };
 
 const HeaderSkeleton = () => (
-    <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
-        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-            <div className="flex items-center gap-2 text-lg font-semibold md:text-base">
-                <Tractor className="h-6 w-6 text-primary" />
-                <span className="sr-only">Agri Saadhan</span>
-            </div>
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-5 w-24" />
-        </nav>
-        <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <div className="ml-auto flex-1 sm:flex-initial">
-                <Skeleton className="h-6 w-32" />
-            </div>
+    <header className="flex h-16 items-center justify-between gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
+        <div className="flex items-center gap-4">
+            <Skeleton className="h-8 w-8 md:hidden" />
+            <Skeleton className="h-6 w-32" />
+        </div>
+        <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-full" />
         </div>
     </header>
 );
-
 
 export function AppHeader() {
   const pathname = usePathname();
@@ -77,20 +69,12 @@ export function AppHeader() {
   
   const beneficiaryId = searchParams.get('beneficiaryId');
   const isWorkMode = isMounted && !!beneficiaryId;
-
-  const isFarmer = userData?.roles?.includes('FARMER');
-  const isOwner = userData?.roles?.includes('EQUIPMENT_OWNER');
-  const isDriver = userData?.roles?.includes('DRIVER');
-  const isSahayakVerified = userData?.sahayakStatus === 'VERIFIED';
   
   const getTitle = () => {
     if (isWorkMode) return "Booking for Farmer";
     const matchingPath = Object.keys(pageTitles).find(path => {
-        if (path.includes('[')) {
-            const regex = new RegExp(`^${path.replace(/\[.*?\]/g, '[^/]+')}$`);
-            return regex.test(pathname);
-        }
-        return pathname.startsWith(path);
+        const regexPath = `^${path.replace(/\[.*?\]/g, '[^/]+')}$`;
+        return new RegExp(regexPath).test(pathname);
     });
     return matchingPath ? pageTitles[matchingPath] : "Agri Saadhan";
   }
@@ -104,17 +88,6 @@ export function AppHeader() {
     }
   }
 
-  const navLinkClass = (path: string) => {
-    const isActive = pathname.startsWith(path);
-    return cn(
-        "transition-colors",
-        { "text-white font-bold": isActive && isWorkMode },
-        { "text-amber-200 hover:text-white": !isActive && isWorkMode },
-        { "text-foreground font-bold": isActive && !isWorkMode },
-        { "text-muted-foreground hover:text-foreground": !isActive && !isWorkMode }
-    );
-  }
-
   const isLoading = isUserLoading || isUserDataLoading;
 
   if (!isMounted) {
@@ -123,76 +96,15 @@ export function AppHeader() {
 
   return (
     <header className={cn(
-        "flex h-16 items-center gap-4 border-b px-4 md:px-6 sticky top-0 z-30",
-        isWorkMode ? "bg-amber-600" : "bg-card"
+        "flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30",
+        isWorkMode && "bg-amber-600"
     )}>
-      <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-        <Link href="/dashboard" className={cn("flex items-center gap-2 text-lg font-semibold md:text-base", isWorkMode && "text-white")}>
-          <Tractor className={cn("h-6 w-6", isWorkMode ? "text-white" : "text-primary")} />
-          <span className="sr-only">Agri Saadhan</span>
-        </Link>
-        
-        <Link href="/dashboard" className={navLinkClass('/dashboard')}>
-          Home
-        </Link>
-        <Link href="/equipment" className={navLinkClass('/equipment')}>
-          Equipment
-        </Link>
-        
-        {isLoading ? (
-          <>
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="h-5 w-24" />
-          </>
-        ) : (
-          <>
-            {isFarmer && (
-                <Link href="/my-bookings" className={navLinkClass('/my-bookings')}>
-                    My Bookings
-                </Link>
-            )}
-
-            {isOwner && (
-                <>
-                    <Link href="/my-equipment" className={navLinkClass('/my-equipment')}>
-                        My Equipment
-                    </Link>
-                    <Link href="/owner-bookings" className={navLinkClass('/owner-bookings')}>
-                        Bookings
-                    </Link>
-                </>
-            )}
-
-            {isDriver && (
-                <Link href="/driver-dashboard" className={navLinkClass('/driver-dashboard')}>
-                    Driver
-                </Link>
-            )}
-
-            {isSahayakVerified && (
-                <Link href="/sahayak" className={navLinkClass('/sahayak')}>
-                    Sahayak
-                </Link>
-            )}
-          </>
-        )}
-      </nav>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className={cn("shrink-0 md:hidden", isWorkMode && "border-amber-400 text-white hover:bg-amber-500")}>
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-          <AppSidebar userData={userData} />
-        </SheetContent>
-      </Sheet>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <div className="ml-auto flex-1 sm:flex-initial">
-          <h1 className={cn("text-xl font-bold font-headline", isWorkMode && "text-white")}>{title}</h1>
-        </div>
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className={cn("md:hidden", isWorkMode && "border-amber-400 text-white hover:bg-amber-500")} />
+        <h1 className={cn("text-lg font-semibold md:text-xl", isWorkMode && "text-white")}>{title}</h1>
+      </div>
+      
+      <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">

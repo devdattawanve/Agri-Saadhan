@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/agri/app-header";
+import { AuthenticatedLayout } from "@/components/agri/authenticated-layout";
 
 export default function EquipmentDetailLayout({
   children,
@@ -6,11 +6,8 @@ export default function EquipmentDetailLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <AppHeader />
-      <main className="flex-1 bg-background">
+    <AuthenticatedLayout>
         {children}
-      </main>
-    </div>
+    </AuthenticatedLayout>
   );
 }

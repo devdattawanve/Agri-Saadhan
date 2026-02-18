@@ -8,12 +8,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useUser } from "@/firebase";
+import { WeatherWidget } from "@/components/agri/weather-widget";
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="space-y-8">
+        <WeatherWidget />
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline text-3xl">Welcome to Agri Saadhan</CardTitle>

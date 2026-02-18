@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { WeatherWidget } from "@/components/agri/weather-widget";
 import { EquipmentCard } from "@/components/agri/equipment-card";
 import { VoiceSearch } from "@/components/agri/voice-search";
 import type { Equipment } from "@/lib/data";
@@ -45,7 +44,6 @@ export default function EquipmentPage() {
 
   return (
     <>
-      <WeatherWidget />
       {isFiltered && (
           <div className="flex items-center justify-between">
               <h2 className="text-2xl font-headline font-bold">Search Results</h2>
