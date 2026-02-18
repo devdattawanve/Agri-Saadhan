@@ -41,7 +41,7 @@ service cloud.firestore {
     
     // EQUIPMENT
     match /equipment/{equipmentId} {
-        allow read: if isSignedIn();
+        allow read: if true;
         // User can only create equipment listings for themselves.
         allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
         // Only the owner can update or delete their own listing.
