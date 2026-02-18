@@ -28,9 +28,11 @@ service cloud.firestore {
     }
     
     // Validates that the ownerId in new booking data matches the actual owner of the equipment.
+    // Includes an exists() check to prevent errors on non-existent documents.
     function isCorrectEquipmentOwner(bookingData) {
-        let equipmentDoc = get(/databases/$(database)/documents/equipment/$(bookingData.equipmentId)).data;
-        return bookingData.ownerId == equipmentDoc.ownerId;
+        let equipmentPath = /databases/$(database)/documents/equipment/$(bookingData.equipmentId);
+        return exists(equipmentPath) && 
+               get(equipmentPath).data.ownerId == bookingData.ownerId;
     }
 
     // Validates that the participants array in new booking data is correctly formed.
@@ -57,7 +59,7 @@ service cloud.firestore {
         // User can only create equipment listings for themselves.
         allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
         // Only the owner can update or delete their own listing.
-        allow update, delete: if resource.data.ownerId == request.auth.uid;
+        allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // BOOKINGS
@@ -65,7 +67,7 @@ service cloud.firestore {
       // READ/LIST: User must be in the 'participants' array.
       // List queries must use an 'array-contains' filter on the participants field.
       allow get: if isSignedIn() && isBookingParticipant(resource.data);
-      allow list: if isSignedIn() && request.auth.uid in request.query.where.participants;
+      allow list: if isSignedIn() && request.query.where.participants.hasAny([request.auth.uid]);
       
       // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()

@@ -10,8 +10,8 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, deleteDoc } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { collection, query, where, doc } from "firebase/firestore";
 import Link from "next/link";
 import { PlusCircle, Tractor, Trash2, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -47,7 +47,7 @@ export default function MyEquipmentPage() {
         setIsDeleting(equipmentId);
         try {
             const equipmentRef = doc(firestore, 'equipment', equipmentId);
-            await deleteDoc(equipmentRef);
+            await deleteDocumentNonBlocking(equipmentRef);
             toast({
                 title: "Equipment Deleted",
                 description: "Your equipment has been removed from the marketplace.",
