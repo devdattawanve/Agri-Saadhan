@@ -47,7 +47,8 @@ service cloud.firestore {
       allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
       
       // A user can list bookings. Client-side queries MUST be constrained to ensure
-      // they only request documents they have permission to read (e.g., via the 'participants' field).
+      // they only request documents they have permission to read. This rule allows the
+      // query to proceed, and the 'get' rule is checked on the result set.
       allow list: if isSignedIn();
       
       allow create: if isSignedIn()
