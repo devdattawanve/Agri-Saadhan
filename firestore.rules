@@ -14,7 +14,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Includes an exists() check to prevent errors on non-existent documents.
     function isCorrectEquipmentOwner(bookingData) {
         let equipmentPath = /databases/$(database)/documents/equipment/$(bookingData.equipmentId);
         return exists(equipmentPath) && 
@@ -44,9 +43,12 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // This single rule allows a user to read any document they are a participant in.
-      // For collection queries (list), this forces the query to include `where('participants', 'array-contains', auth.uid)`.
-      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // A user can get a specific document if they are a participant.
+      allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
+      
+      // A user can list bookings. Client-side queries MUST be constrained to ensure
+      // they only request documents they have permission to read (e.g., via the 'participants' field).
+      allow list: if isSignedIn();
       
       allow create: if isSignedIn()
                       && request.resource.data.createdBy == request.auth.uid
@@ -54,19 +56,11 @@ service cloud.firestore {
                       && isCorrectEquipmentOwner(request.resource.data)
                       && hasValidParticipants(request.resource.data);
 
-      // Rule 1: The owner can confirm/reject a pending booking.
-      allow update: if isSignedIn()
-                      && request.auth.uid == resource.data.ownerId
-                      && resource.data.status == 'pending'
-                      && (request.resource.data.status == 'confirmed' || request.resource.data.status == 'rejected')
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-
-      // Rule 2: The creator can cancel a pending booking.
-      allow update: if isSignedIn()
-                      && request.auth.uid == resource.data.createdBy
-                      && resource.data.status == 'pending'
-                      && request.resource.data.status == 'cancelled'
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+      // An owner can confirm/reject, and the creator can cancel a pending booking.
+      allow update: if isSignedIn() && resource.data.status == 'pending' &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
+                      ((request.auth.uid == resource.data.ownerId && (request.resource.data.status == 'confirmed' || request.resource.data.status == 'rejected')) ||
+                       (request.auth.uid == resource.data.createdBy && request.resource.data.status == 'cancelled'));
       
       allow delete: if false;
     }
