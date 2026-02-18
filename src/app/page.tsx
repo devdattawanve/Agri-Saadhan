@@ -1,12 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/agri/logo";
 import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { SplashScreen } from "@/components/agri/splash-screen";
 
 const languages = [
   { name: "English", code: "en" },
@@ -20,14 +21,27 @@ const languages = [
 export default function OnboardingPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000); // Show splash for 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!showSplash && !isUserLoading && user) {
       router.replace('/dashboard');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, showSplash]);
 
-  if (isUserLoading || user) {
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
+  if (isUserLoading || (!showSplash && user)) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
         <p>Loading...</p>
