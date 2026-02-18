@@ -89,6 +89,8 @@ export default function BookingPage() {
 
         const bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any } = {
             equipmentId: id,
+            equipmentName: equipment.name,
+            equipmentImageUrl: equipment.imageUrl,
             ownerId: equipment.ownerId,
             createdBy: user.uid,
             beneficiary: isSahayakBooking && beneficiaryId ? beneficiaryId : user.uid,
@@ -113,10 +115,9 @@ export default function BookingPage() {
 
         try {
             const bookingsColRef = collection(firestore, 'bookings');
-            // Explicitly create the document first. This triggers the 'create' security rule.
             const newDocRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
             
-            // Now update the document with its own ID. This triggers the 'update' security rule.
+            // This is a pattern to set the document ID on the document itself, which can be useful.
             await setDocumentNonBlocking(newDocRef, { id: newDocRef.id }, { merge: true });
             
             toast({

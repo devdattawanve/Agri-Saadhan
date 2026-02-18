@@ -30,6 +30,8 @@ export interface Equipment {
 export interface Booking {
     id: string;
     equipmentId: string;
+    equipmentName: string;
+    equipmentImageUrl: string;
     ownerId: string;
     createdBy: string;
     beneficiary: string;

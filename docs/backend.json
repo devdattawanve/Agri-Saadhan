@@ -206,6 +206,14 @@
         "equipmentId": {
           "type": "string"
         },
+        "equipmentName": {
+            "type": "string",
+            "description": "Denormalized name of the equipment for easier display."
+        },
+        "equipmentImageUrl": {
+            "type": "string",
+            "description": "Denormalized image URL of the equipment for easier display."
+        },
         "ownerId": {
           "type": "string"
         },
@@ -304,7 +312,9 @@
         "status",
         "startDate",
         "endDate",
-        "totalAmount"
+        "totalAmount",
+        "equipmentName",
+        "equipmentImageUrl"
       ]
     }
   },
