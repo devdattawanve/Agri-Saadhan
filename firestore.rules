@@ -3,7 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // =================================
     // HELPER FUNCTIONS
+    // =================================
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,14 +14,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Checks if the user's profile exists AND their sahayakStatus is VERIFIED.
+    // Securely checks if a user is a verified Sahayak.
+    // Uses exists() to prevent errors on non-existent documents.
     function isVerifiedSahayak(userId) {
       return isSignedIn() &&
              exists(/databases/$(database)/documents/users/$(userId)) &&
              get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
     }
 
-    // Checks if the user's UID is in the booking's participants array.
+    // Checks if the requesting user's UID is in the booking's participants array.
     function isBookingParticipant(booking) {
         return request.auth.uid in booking.participants;
     }
@@ -37,48 +40,66 @@ service cloud.firestore {
              bookingData.ownerId in bookingData.participants;
     }
 
+    // =================================
+    // COLLECTION RULES
+    // =================================
+
     // USERS
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isOwner(userId);
-      allow list: if isVerifiedSahayak(request.auth.uid);
+      allow write: if isOwner(userId); // Covers create, update, delete
+      allow list: if isVerifiedSahayak(request.auth.uid); // Sahayaks can list users
     }
     
     // EQUIPMENT
     match /equipment/{equipmentId} {
         allow read: if isSignedIn();
+        // User can only create equipment listings for themselves.
         allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+        // Only the owner can update or delete their own listing.
         allow update, delete: if resource.data.ownerId == request.auth.uid;
     }
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // READ / LIST
+      // READ/LIST: User must be in the 'participants' array.
+      // List queries must use an 'array-contains' filter on the participants field.
       allow get: if isSignedIn() && isBookingParticipant(resource.data);
       allow list: if isSignedIn() && request.auth.uid in request.query.where.participants;
       
-      // CREATE
+      // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
+                      // 1. Creator must be the authenticated user.
                       && request.resource.data.createdBy == request.auth.uid
+                      // 2. Initial status must be 'pending'.
                       && request.resource.data.status == 'pending'
+                      // 3. The booking data must correctly reference the equipment's true owner.
                       && isCorrectEquipmentOwner(request.resource.data)
+                      // 4. The participants array must be correctly formed.
                       && hasValidParticipants(request.resource.data)
-                      && (request.resource.data.beneficiary == request.auth.uid || isVerifiedSahayak(request.auth.uid));
+                      // 5. The booking is either for the creator OR created by a verified agent.
+                      // Uses a ternary operator to safely avoid the Firestore || short-circuiting issue.
+                      && (request.resource.data.beneficiary == request.auth.uid ? true : isVerifiedSahayak(request.auth.uid));
 
-      // UPDATE
-      // Owner can confirm/reject a pending booking
+      // UPDATE: Different actors have different update permissions.
+      // We use separate `allow update` statements which Firestore evaluates with an OR.
+      
+      // Rule 1: The owner can confirm/reject a pending booking.
       allow update: if isSignedIn()
                       && request.auth.uid == resource.data.ownerId
                       && resource.data.status == 'pending'
                       && (request.resource.data.status == 'confirmed' || request.resource.data.status == 'rejected')
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
 
-      // Creator can cancel a pending booking
+      // Rule 2: The creator can cancel a pending booking.
       allow update: if isSignedIn()
                       && request.auth.uid == resource.data.createdBy
                       && resource.data.status == 'pending'
                       && request.resource.data.status == 'cancelled'
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+      
+      // Disallow deletion to maintain booking history.
+      allow delete: if false;
     }
   }
 }
