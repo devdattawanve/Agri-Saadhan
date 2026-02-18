@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Home, Warehouse, User as UserIcon } from "lucide-react";
+import { Users, Home, Warehouse, User as UserIcon, Tractor, Book, Briefcase } from "lucide-react";
 import { Logo } from "./logo";
 
 // Define the user data type inline to avoid complex imports
@@ -11,7 +11,10 @@ interface AppUserData {
 
 export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
     const roles = userData?.roles || [];
-    const sahayakStatus = userData?.sahayakStatus;
+    const isFarmer = roles.includes('FARMER');
+    const isOwner = roles.includes('EQUIPMENT_OWNER');
+    const isDriver = roles.includes('DRIVER');
+    const isSahayakVerified = userData?.sahayakStatus === 'VERIFIED';
 
     return (
         <nav className="grid items-start text-sm font-medium">
@@ -23,20 +26,46 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
             >
                 <Home className="h-4 w-4" />
-                Farmer Dashboard
+                Home
+            </Link>
+            <Link
+                href="/equipment"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+            >
+                <Tractor className="h-4 w-4" />
+                Equipment
             </Link>
 
-            {roles.includes('EQUIPMENT_OWNER') && (
+            {isFarmer && (
                 <Link
-                    href="/owner-dashboard"
+                    href="/my-bookings"
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
-                    <Warehouse className="h-4 w-4" />
-                    Owner Dashboard
+                    <Book className="h-4 w-4" />
+                    My Bookings
                 </Link>
             )}
 
-            {roles.includes('DRIVER') && (
+            {isOwner && (
+                <>
+                    <Link
+                        href="/my-equipment"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                    >
+                        <Warehouse className="h-4 w-4" />
+                        My Equipment
+                    </Link>
+                    <Link
+                        href="/owner-bookings"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                    >
+                        <Briefcase className="h-4 w-4" />
+                        Bookings
+                    </Link>
+                </>
+            )}
+
+            {isDriver && (
                 <Link
                     href="/driver-dashboard"
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
@@ -46,7 +75,7 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
                 </Link>
             )}
 
-            {sahayakStatus === 'VERIFIED' && (
+            {isSahayakVerified && (
                 <Link
                     href="/sahayak"
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"

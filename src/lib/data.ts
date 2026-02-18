@@ -22,6 +22,24 @@ export interface Equipment {
   imageHint: string;
 }
 
+export interface Booking {
+    id: string;
+    equipmentId: string;
+    ownerId: string;
+    createdBy: string;
+    beneficiary: string;
+    sahayakId?: string;
+    driverId?: string;
+    commissionEligible: boolean;
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'disputed';
+    totalAmount: number;
+    sahayakCommission?: number;
+    platformFee?: number;
+    createdAt: any; // Firestore Timestamp
+    updatedAt: any; // Firestore Timestamp
+}
+
+
 const tractorImg = PlaceHolderImages.find(img => img.id === 'tractor_1')!;
 const rotavatorImg = PlaceHolderImages.find(img => img.id === 'rotavator_1')!;
 const plowImg = PlaceHolderImages.find(img => img.id === 'plow_1')!;

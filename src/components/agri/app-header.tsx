@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUser, Menu, LogOut, Users, Tractor, Warehouse, User as UserIcon } from "lucide-react";
+import { CircleUser, Menu, LogOut, Users, Tractor, Warehouse, User as UserIcon, Home, Briefcase, Book } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,11 +20,14 @@ import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 
 const pageTitles: { [key: string]: string } = {
-  "/dashboard": "Farmer Dashboard",
+  "/dashboard": "Home",
+  "/equipment": "Equipment Marketplace",
+  "/my-bookings": "My Bookings",
+  "/my-equipment": "My Equipment",
+  "/owner-bookings": "Bookings Received",
   "/sahayak": "Sahayak Dashboard",
-  "/owner-dashboard": "Owner Dashboard",
   "/driver-dashboard": "Driver Dashboard",
-  "/equipment": "Equipment Details",
+  "/equipment/[id]": "Equipment Details",
   "/booking": "Book Equipment",
   "/profile": "Your Profile"
 };
@@ -47,14 +50,24 @@ export function AppHeader() {
   const beneficiaryId = searchParams.get('beneficiaryId');
   const isWorkMode = !!beneficiaryId;
 
+  const isFarmer = userData?.roles?.includes('FARMER');
+  const isOwner = userData?.roles?.includes('EQUIPMENT_OWNER');
+  const isDriver = userData?.roles?.includes('DRIVER');
   const isSahayakVerified = userData?.sahayakStatus === 'VERIFIED';
   
-  const title = isWorkMode 
-    ? "Booking for Farmer" 
-    : Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/') 
-      ? pageTitles[Object.keys(pageTitles).find(path => pathname.startsWith(path) && path !== '/')!] 
-      : "Agri Saadhan";
-
+  const getTitle = () => {
+    if (isWorkMode) return "Booking for Farmer";
+    const matchingPath = Object.keys(pageTitles).find(path => {
+        if (path.includes('[')) {
+            const regex = new RegExp(`^${path.replace(/\[.*?\]/g, '[^/]+')}$`);
+            return regex.test(pathname);
+        }
+        return pathname.startsWith(path);
+    });
+    return matchingPath ? pageTitles[matchingPath] : "Agri Saadhan";
+  }
+  
+  const title = getTitle();
 
   const handleLogout = async () => {
     if (auth) {
@@ -85,17 +98,31 @@ export function AppHeader() {
           <span className="sr-only">Agri Saadhan</span>
         </Link>
         
-        <Link href={isWorkMode ? `/dashboard?beneficiaryId=${beneficiaryId}` : "/dashboard"} className={navLinkClass('/dashboard')}>
-          Farmer
+        <Link href="/dashboard" className={navLinkClass('/dashboard')}>
+          Home
+        </Link>
+        <Link href="/equipment" className={navLinkClass('/equipment')}>
+          Equipment
         </Link>
         
-        {userData?.roles?.includes('EQUIPMENT_OWNER') && (
-            <Link href="/owner-dashboard" className={navLinkClass('/owner-dashboard')}>
-                Owner
+        {isFarmer && (
+            <Link href="/my-bookings" className={navLinkClass('/my-bookings')}>
+                My Bookings
             </Link>
         )}
 
-        {userData?.roles?.includes('DRIVER') && (
+        {isOwner && (
+            <>
+                <Link href="/my-equipment" className={navLinkClass('/my-equipment')}>
+                    My Equipment
+                </Link>
+                <Link href="/owner-bookings" className={navLinkClass('/owner-bookings')}>
+                    Bookings
+                </Link>
+            </>
+        )}
+
+        {isDriver && (
             <Link href="/driver-dashboard" className={navLinkClass('/driver-dashboard')}>
                 Driver
             </Link>
