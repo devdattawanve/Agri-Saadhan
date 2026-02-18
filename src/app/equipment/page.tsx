@@ -20,29 +20,22 @@ export default function EquipmentPage() {
 
   const { data: allEquipment, isLoading } = useCollection<Equipment>(equipmentColRef);
 
-  // Filter out the owner's own equipment from the list.
-  const equipmentForDisplay = useMemo(() => {
-    if (!allEquipment) return null;
-    if (!user) return allEquipment; // If user isn't loaded yet, show all to avoid a flash of content change.
-    return allEquipment.filter(item => item.ownerId !== user.uid);
-  }, [allEquipment, user]);
-
   const [filteredEquipment, setFilteredEquipment] = useState<Equipment[] | null>(null);
   const isFiltered = filteredEquipment !== null;
 
   const getEquipmentList = () => {
     // If a search is active, return the filtered list, otherwise return the base list.
-    return isFiltered ? filteredEquipment : equipmentForDisplay;
+    return isFiltered ? filteredEquipment : allEquipment;
   }
 
   const handleSearch = (filters: VoiceEquipmentSearchOutput | null) => {
-    if (!filters || !equipmentForDisplay) {
+    if (!filters || !allEquipment) {
         setFilteredEquipment(null);
         return;
     }
     
-    // Always start filtering from the list that excludes the owner's equipment.
-    let equipment = [...equipmentForDisplay];
+    // Always start filtering from the full list of equipment.
+    let equipment = [...allEquipment];
     if (filters.equipmentType && filters.equipmentType !== "General Farm Equipment") {
       equipment = equipment.filter(e => e.type.toLowerCase() === filters.equipmentType.toLowerCase());
     }
@@ -65,7 +58,7 @@ export default function EquipmentPage() {
              <CardSkeleton key={i} />
         ))}
         {equipmentList && equipmentList.map((item) => (
-          <EquipmentCard key={item.id} equipment={item} />
+          <EquipmentCard key={item.id} equipment={item} isOwner={user?.uid === item.ownerId} />
         ))}
         {!isLoading && equipmentList?.length === 0 && (
             <div className="col-span-full text-center py-10">

@@ -14,13 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSearchParams } from "next/navigation";
 
-export function EquipmentCard({ equipment }: { equipment: Equipment }) {
+export function EquipmentCard({ equipment, isOwner }: { equipment: Equipment; isOwner: boolean; }) {
   const searchParams = useSearchParams();
   const beneficiaryId = searchParams.get('beneficiaryId');
   
   const linkHref = beneficiaryId 
     ? `/booking/${equipment.id}?beneficiaryId=${beneficiaryId}`
     : `/booking/${equipment.id}`;
+
+  const detailLinkHref = `/equipment/${equipment.id}${beneficiaryId ? `?beneficiaryId=${beneficiaryId}`: ''}`;
 
   const ownerName = equipment.owner || "Owner";
 
@@ -38,7 +40,7 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
-      <Link href={linkHref}>
+      <Link href={detailLinkHref}>
         <div className="relative">
           <Image
             src={equipment.imageUrl}
@@ -82,11 +84,15 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
         {equipment.distance && <p className="text-sm">{equipment.distance} km from your location</p>}
       </CardContent>
       <CardFooter className="mt-auto">
-         <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild>
-            <Link href={linkHref}>
-                Book Now
-            </Link>
-        </Button>
+         {isOwner ? (
+            <Button variant="outline" className="w-full" disabled>Your own Equipment</Button>
+         ) : (
+            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+                <Link href={linkHref}>
+                    Book Now
+                </Link>
+            </Button>
+         )}
       </CardFooter>
     </Card>
   );
