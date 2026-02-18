@@ -22,11 +22,6 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
     }
 
-    // Checks if the requesting user's UID is in the booking's participants array.
-    function isBookingParticipant(booking) {
-        return request.auth.uid in booking.participants;
-    }
-    
     // Validates that the ownerId in new booking data matches the actual owner of the equipment.
     // Includes an exists() check to prevent errors on non-existent documents.
     function isCorrectEquipmentOwner(bookingData) {
@@ -37,9 +32,9 @@ service cloud.firestore {
 
     // Validates that the participants array in new booking data is correctly formed.
     function hasValidParticipants(bookingData) {
-      return request.auth.uid in bookingData.participants &&
-             bookingData.beneficiary in bookingData.participants &&
-             bookingData.ownerId in bookingData.participants;
+      // Use hasAll for a more robust check of required participants.
+      // It correctly handles the de-duplicated array from the client.
+      return bookingData.participants.hasAll([bookingData.ownerId, bookingData.beneficiary, request.auth.uid]);
     }
 
     // =================================
@@ -50,7 +45,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isOwner(userId); // Covers create, update, delete
-      allow list: if isVerifiedSahayak(request.auth.uid); // Sahayaks can list users
     }
     
     // EQUIPMENT
@@ -64,15 +58,9 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // GET: User must be in the 'participants' array.
-      allow get: if isSignedIn() && isBookingParticipant(resource.data);
-
-      // LIST: Allow if querying by owner, creator, or beneficiary.
-      // Firestore ORs these rules. The client query MUST match one of them.
-      allow list: if isSignedIn() && request.query.where.ownerId == request.auth.uid;
-      allow list: if isSignedIn() && request.query.where.createdBy == request.auth.uid;
-      allow list: if isSignedIn() && request.query.where.beneficiary == request.auth.uid;
-
+      // READ/LIST: User must be in the 'participants' array.
+      // This single rule now covers both get and list operations securely.
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participants;
       
       // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
@@ -85,11 +73,9 @@ service cloud.firestore {
                       // 4. The participants array must be correctly formed.
                       && hasValidParticipants(request.resource.data)
                       // 5. The booking is either for the creator OR created by a verified agent.
-                      // Uses a ternary operator to safely avoid the Firestore || short-circuiting issue.
                       && (request.resource.data.beneficiary == request.auth.uid ? true : isVerifiedSahayak(request.auth.uid));
 
       // UPDATE: Different actors have different update permissions.
-      // We use separate `allow update` statements which Firestore evaluates with an OR.
       
       // Rule 1: The owner can confirm/reject a pending booking.
       allow update: if isSignedIn()
