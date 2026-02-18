@@ -21,6 +21,7 @@ import { doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const pageTitles: { [key: string]: string } = {
   "/dashboard": "Home",
@@ -172,7 +173,16 @@ export function AppHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
-              <CircleUser className="h-5 w-5" />
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={userData?.profilePictureUrl || undefined} alt={userData?.name} />
+                <AvatarFallback>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  ) : (
+                    userData?.name ? userData.name[0].toUpperCase() : <CircleUser className="h-5 w-5" />
+                  )}
+                </AvatarFallback>
+              </Avatar>
               <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>

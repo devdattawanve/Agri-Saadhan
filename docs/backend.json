@@ -26,6 +26,15 @@
           "type": "string",
           "description": "The user's preferred language for the application interface."
         },
+        "profilePictureUrl": {
+            "type": "string",
+            "description": "URL of the user's profile picture."
+        },
+        "gender": {
+            "type": "string",
+            "description": "The gender of the user.",
+            "enum": ["Male", "Female", "Other", "Prefer not to say"]
+        },
         "roles": {
           "type": "array",
           "description": "The roles assigned to the user.",

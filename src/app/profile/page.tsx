@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -10,8 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Camera, User as UserIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const availableRoles = [
   { id: 'FARMER', label: 'Farmer' },
@@ -37,6 +40,9 @@ export default function ProfilePage() {
     const [location, setLocation] = useState("");
     const [roles, setRoles] = useState<string[]>([]);
     const [farmSize, setFarmSize] = useState("");
+    const [gender, setGender] = useState("");
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [detectedCoords, setDetectedCoords] = useState<{lat: number, lng: number} | null>(null);
     const [loading, setLoading] = useState(false);
     const [detectingLocation, setDetectingLocation] = useState(false);
@@ -47,11 +53,32 @@ export default function ProfilePage() {
             setLocation(userData.villageTehsil || "");
             setRoles(userData.roles || []);
             setFarmSize(userData.farmSizeInAcres?.toString() || "");
+            setGender(userData.gender || "");
+            setImagePreview(userData.profilePictureUrl || null);
             if (userData.latitude && userData.longitude) {
                 setDetectedCoords({ lat: userData.latitude, lng: userData.longitude });
             }
         }
     }, [userData]);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.size > 1 * 1024 * 1024) { // 1MB limit
+                toast({
+                    variant: "destructive",
+                    title: "Image Too Large",
+                    description: "Please upload an image smaller than 1MB.",
+                });
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
 
     const handleDetectLocation = async () => {
@@ -63,7 +90,6 @@ export default function ProfilePage() {
                 toast({ title: "Location Detected!", description: "Fetching your address..." });
 
                 try {
-                    // Using Nominatim for reverse geocoding - no API key needed for this public service
                     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
                     const data = await response.json();
                     if (data && data.address) {
@@ -114,7 +140,6 @@ export default function ProfilePage() {
         setLoading(true);
         try {
             const isSahayak = roles.includes('SAHAYAK');
-            // We only update fields, we don't want to overwrite existing values like sahayakStatus or commissionRate unless they are part of this form.
             const updatedData: any = {
                 name: name,
                 villageTehsil: location,
@@ -122,11 +147,11 @@ export default function ProfilePage() {
                 farmSizeInAcres: roles.includes('FARMER') ? Number(farmSize) : null,
                 latitude: detectedCoords?.lat,
                 longitude: detectedCoords?.lng,
-                // geohash would need to be recalculated, for now we leave it
+                profilePictureUrl: imagePreview,
+                gender: gender || null,
                 updatedAt: new Date().toISOString(),
             };
 
-            // If a user becomes a Sahayak for the first time, set their status to PENDING
             if (isSahayak && userData?.sahayakStatus === 'NONE') {
                 updatedData.sahayakStatus = 'PENDING';
                 updatedData.commissionRate = 0.05; // Default 5%
@@ -191,6 +216,28 @@ export default function ProfilePage() {
                 <CardDescription>Update your personal information and roles.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                <div className="space-y-2 flex flex-col items-center">
+                    <Label>Profile Picture</Label>
+                    <div className="relative">
+                        <Avatar className="h-24 w-24">
+                            <AvatarImage src={imagePreview || undefined} alt="User profile" />
+                            <AvatarFallback>
+                                <UserIcon className="h-12 w-12" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full h-8 w-8" onClick={() => fileInputRef.current?.click()}>
+                            <Camera className="h-4 w-4" />
+                            <span className="sr-only">Upload picture</span>
+                        </Button>
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/png, image/jpeg"
+                        onChange={handleFileChange}
+                    />
+                </div>
                 <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input 
@@ -199,6 +246,18 @@ export default function ProfilePage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)} 
                     />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="phone">Mobile Number</Label>
+                    <div className="flex items-center gap-2">
+                         <span className="rounded-md border bg-muted px-3 py-2 text-sm">+91</span>
+                        <Input 
+                            id="phone" 
+                            type="tel"
+                            value={user?.phoneNumber?.replace('+91', '') || ''}
+                            disabled
+                        />
+                    </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="location">Village / Tehsil</Label>
@@ -215,6 +274,20 @@ export default function ProfilePage() {
                         </Button>
                     </div>
                         {detectedCoords && <p className="text-xs text-muted-foreground">Location captured: {detectedCoords.lat.toFixed(4)}, {detectedCoords.lng.toFixed(4)}</p>}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="gender">Gender (Optional)</Label>
+                    <Select onValueChange={setGender} value={gender}>
+                        <SelectTrigger id="gender">
+                            <SelectValue placeholder="Select your gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-4">
                     <Label>Your Roles</Label>
