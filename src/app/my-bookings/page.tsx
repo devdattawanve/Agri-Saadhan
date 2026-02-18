@@ -21,6 +21,13 @@ const statusColors: { [key: string]: string } = {
     completed: "bg-primary"
 };
 
+const paymentStatusColors: { [key: string]: string } = {
+    pending: "bg-yellow-500 hover:bg-yellow-600",
+    completed: "bg-green-500 hover:bg-green-600",
+    failed: "bg-red-500 hover:bg-red-600",
+};
+
+
 export default function MyBookingsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -65,7 +72,7 @@ export default function MyBookingsPage() {
                     <Card key={booking.id} className="overflow-hidden">
                         <div className="flex">
                             <div className="relative w-32 h-32 flex-shrink-0">
-                                <Image src={(booking as any).equipmentImage || '/placeholder.png'} alt={(booking as any).equipmentName} layout="fill" className="object-cover" />
+                                <Image src={(booking as any).equipmentImage || '/placeholder.png'} alt={(booking as any).equipmentName || 'Equipment'} layout="fill" className="object-cover" />
                             </div>
                             <div className="p-4 flex-grow">
                                 <div className="flex justify-between items-start">
@@ -75,7 +82,15 @@ export default function MyBookingsPage() {
                                             {booking.startDate?.toDate ? format(booking.startDate.toDate(), 'PPP p') : ''}
                                         </p>
                                     </div>
-                                    <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
+                                    <div className="flex flex-col items-end gap-2 text-right">
+                                        <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
+                                        <Badge 
+                                            variant={booking.paymentStatus === 'completed' ? 'default' : 'secondary'} 
+                                            className="capitalize"
+                                        >
+                                            Payment: {booking.paymentStatus ?? 'Pending'}
+                                        </Badge>
+                                    </div>
                                 </div>
                                 <div className="flex justify-between items-end mt-4">
                                      <p className="font-bold text-lg">₹{booking.totalAmount.toFixed(2)}</p>

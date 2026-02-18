@@ -19,8 +19,8 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
   const beneficiaryId = searchParams.get('beneficiaryId');
   
   const linkHref = beneficiaryId 
-    ? `/equipment/${equipment.id}?beneficiaryId=${beneficiaryId}`
-    : `/equipment/${equipment.id}`;
+    ? `/booking/${equipment.id}?beneficiaryId=${beneficiaryId}`
+    : `/booking/${equipment.id}`;
 
   const ownerName = equipment.owner || "Owner";
 

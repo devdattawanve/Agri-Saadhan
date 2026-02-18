@@ -49,6 +49,8 @@ export interface Booking {
 
     sahayakCommission?: number;
     platformFee?: number;
+    paymentStatus: 'pending' | 'completed' | 'failed';
+    paymentId?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }

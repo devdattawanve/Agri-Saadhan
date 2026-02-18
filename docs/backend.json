@@ -264,6 +264,19 @@
         "platformFee": {
             "type": "number"
         },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The payment status of the booking.",
+          "enum": [
+            "pending",
+            "completed",
+            "failed"
+          ]
+        },
+        "paymentId": {
+          "type": "string",
+          "description": "The ID of the payment transaction, if applicable."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

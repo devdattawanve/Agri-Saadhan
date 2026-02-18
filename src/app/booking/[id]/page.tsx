@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound, useRouter, useSearchParams, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, IndianRupee, User, Truck, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Loader2, User, Truck, Calendar as CalendarIcon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +15,7 @@ import type { Equipment, Booking } from "@/lib/data";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, differenceInHours, addDays, startOfDay } from 'date-fns';
+import { format, differenceInHours, startOfDay } from 'date-fns';
 import { DateRange } from "react-day-picker";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -47,9 +47,11 @@ export default function BookingPage() {
     const { data: existingBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
     const disabledDates = useMemo(() => {
-        const dates = [{ before: startOfDay(new Date()) }];
+        const dates: (Date | { from: Date; to: Date; })[] = [{ before: startOfDay(new Date()) }];
         existingBookings?.forEach(booking => {
-            dates.push({ from: booking.startDate.toDate(), to: booking.endDate.toDate() });
+            if (booking.startDate?.toDate && booking.endDate?.toDate) {
+                dates.push({ from: booking.startDate.toDate(), to: booking.endDate.toDate() });
+            }
         });
         return dates;
     }, [existingBookings]);
@@ -74,7 +76,7 @@ export default function BookingPage() {
 
 
     const handleRequestBooking = async () => {
-        if (!user || !equipment || !date?.from || !date?.to) {
+        if (!user || !firestore || !equipment || !date?.from || !date?.to) {
             toast({ variant: "destructive", title: "Missing Information", description: "Please select a valid date range to make a booking." });
             return;
         }
@@ -84,14 +86,12 @@ export default function BookingPage() {
         }
         setLoading(true);
 
-        const bookingData = {
+        const bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any } = {
             equipmentId: id,
-            equipmentName: equipment.name,
-            equipmentImage: equipment.imageUrl,
             ownerId: equipment.ownerId,
             createdBy: user.uid,
-            beneficiary: isSahayakBooking ? beneficiaryId : user.uid,
-            sahayakId: isSahayakBooking ? user.uid : null,
+            beneficiary: isSahayakBooking && beneficiaryId ? beneficiaryId : user.uid,
+            sahayakId: isSahayakBooking ? user.uid : undefined,
 
             status: 'pending',
             startDate: date.from,
@@ -99,7 +99,12 @@ export default function BookingPage() {
             requiresDriver,
             pickupType,
 
-            ...costs,
+            baseRate: costs.baseRate,
+            driverCharge: costs.driverCharge,
+            deliveryCharge: costs.deliveryCharge,
+            totalAmount: costs.totalAmount,
+            
+            paymentStatus: 'pending',
 
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -109,7 +114,6 @@ export default function BookingPage() {
             const bookingsColRef = collection(firestore, 'bookings');
             const newDocRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
             
-            // Now update the doc with its own ID
             if (newDocRef?.id) {
                 const finalDocRef = doc(firestore, 'bookings', newDocRef.id);
                 await setDocumentNonBlocking(finalDocRef, { id: newDocRef.id }, { merge: true });
@@ -143,12 +147,24 @@ export default function BookingPage() {
 
     return (
         <div className="container mx-auto py-8 max-w-4xl">
-            <h1 className="text-3xl font-bold font-headline mb-2">Request to Book</h1>
-            <p className="text-lg text-muted-foreground mb-6">{equipment.name}</p>
+            <h1 className="text-3xl font-bold font-headline mb-6">Request to Book</h1>
             
             <div className="grid md:grid-cols-[2fr_1fr] gap-8 items-start">
                 <div className="space-y-8">
-                    {/* Date Picker Card */}
+                     <Card className="overflow-hidden">
+                        <div className="flex flex-col sm:flex-row">
+                            <div className="relative h-48 w-full sm:w-1/3 flex-shrink-0">
+                                <Image src={equipment.imageUrl} alt={equipment.name} layout="fill" className="object-cover" />
+                            </div>
+                            <div className="p-6">
+                                <CardTitle className="font-headline text-2xl">{equipment.name}</CardTitle>
+                                <CardDescription className="mt-2 text-sm">
+                                    {equipment.description || 'No description provided.'}
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </Card>
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline text-xl">1. Select Booking Duration</CardTitle>
@@ -194,7 +210,6 @@ export default function BookingPage() {
                         </CardContent>
                     </Card>
 
-                     {/* Add-ons Card */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline text-xl">2. Select Add-ons</CardTitle>
@@ -226,7 +241,6 @@ export default function BookingPage() {
 
                 </div>
 
-                {/* Cost Summary Card */}
                 <Card className="sticky top-24">
                     <CardHeader>
                         <CardTitle className="font-headline text-xl">Booking Summary</CardTitle>
