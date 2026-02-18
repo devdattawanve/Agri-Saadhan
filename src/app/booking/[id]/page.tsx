@@ -113,10 +113,11 @@ export default function BookingPage() {
 
         try {
             const bookingsColRef = collection(firestore, 'bookings');
-            const newDocRef = doc(bookingsColRef); // Create a new doc with a generated ID
+            // Explicitly create the document first. This triggers the 'create' security rule.
+            const newDocRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
             
-            // Set the booking data, including the generated ID
-            await setDocumentNonBlocking(newDocRef, { ...bookingData, id: newDocRef.id }, { merge: true });
+            // Now update the document with its own ID. This triggers the 'update' security rule.
+            await setDocumentNonBlocking(newDocRef, { id: newDocRef.id }, { merge: true });
             
             toast({
                 title: "Booking Requested!",
