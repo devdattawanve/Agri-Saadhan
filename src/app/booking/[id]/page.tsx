@@ -35,6 +35,16 @@ export default function BookingPage() {
 
   const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
 
+  const getDisplayPrice = (eq: Equipment) => {
+    if (eq.price?.perHour) {
+      return { amount: eq.price.perHour, unit: 'hour' };
+    }
+    if (eq.price?.perDay) {
+      return { amount: eq.price.perDay, unit: 'day' };
+    }
+    return { amount: 0, unit: 'request' };
+  };
+
   const handleConfirmBooking = async () => {
     if (!user) {
         toast({ variant: "destructive", title: "You must be logged in to book."});
@@ -46,8 +56,11 @@ export default function BookingPage() {
     }
     setLoading(true);
     
+    // Assumption: Use hourly price if available, otherwise daily.
+    const bookingAmount = equipment.price?.perHour || equipment.price?.perDay || 0;
+
     const bookingData = {
-        equipmentId: equipment.id,
+        equipmentId: id,
         ownerId: equipment.ownerId, 
         driverId: null, // Placeholder
         
@@ -58,7 +71,7 @@ export default function BookingPage() {
 
         status: 'pending',
         paymentStatus: paymentOption.toUpperCase(),
-        totalAmount: equipment.price.amount,
+        totalAmount: bookingAmount,
         sahayakCommission: 0, 
         platformFee: 0, 
         
@@ -68,7 +81,12 @@ export default function BookingPage() {
 
     try {
         const bookingsColRef = collection(firestore, 'bookings');
-        await addDocumentNonBlocking(bookingsColRef, bookingData);
+        const newBookingRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
+        // Add booking id to the object before sending to firestore.
+        if(newBookingRef) {
+             const bookingDocWithId = { ...bookingData, id: newBookingRef.id };
+             await addDocumentNonBlocking(bookingsColRef, bookingDocWithId);
+        }
         
         toast({
             title: "Booking Confirmed!",
@@ -110,6 +128,8 @@ export default function BookingPage() {
       notFound();
   }
 
+  const displayPrice = getDisplayPrice(equipment);
+
   return (
     <div className="container mx-auto py-8 max-w-4xl">
         <h1 className="text-3xl font-bold font-headline mb-2">Confirm Your Booking</h1>
@@ -121,7 +141,7 @@ export default function BookingPage() {
                         <Image src={equipment.imageUrl} alt={equipment.name} width={80} height={60} className="rounded-lg object-cover" />
                         <div>
                             <CardTitle className="font-headline">{equipment.name}</CardTitle>
-                            <CardDescription>Price: ₹{equipment.price.amount}/{equipment.price.unit}</CardDescription>
+                            <CardDescription>Price: ₹{displayPrice.amount}/{displayPrice.unit}</CardDescription>
                         </div>
                     </CardHeader>
                 </Card>

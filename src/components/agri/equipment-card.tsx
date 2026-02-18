@@ -22,8 +22,19 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
     ? `/equipment/${equipment.id}?beneficiaryId=${beneficiaryId}`
     : `/equipment/${equipment.id}`;
 
-  // Fallback for owner name if not available
   const ownerName = equipment.owner || "Owner";
+
+  const getDisplayPrice = () => {
+    if (equipment.price?.perHour) {
+      return { amount: equipment.price.perHour, unit: 'hour' };
+    }
+    if (equipment.price?.perDay) {
+      return { amount: equipment.price.perDay, unit: 'day' };
+    }
+    return null;
+  };
+
+  const displayPrice = getDisplayPrice();
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
@@ -53,16 +64,20 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
+          {displayPrice ? (
             <span className="font-bold text-lg text-primary">
-                ₹{equipment.price.amount}
-                <span className="text-sm font-normal">/{equipment.price.unit}</span>
+              ₹{displayPrice.amount}
+              <span className="text-sm font-normal">/{displayPrice.unit}</span>
             </span>
-            {equipment.travelTime && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>~{equipment.travelTime} mins away</span>
-                </Badge>
-            )}
+          ) : (
+            <span className="text-sm text-muted-foreground">Price not set</span>
+          )}
+          {equipment.travelTime && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span>~{equipment.travelTime} mins away</span>
+            </Badge>
+          )}
         </div>
         {equipment.distance && <p className="text-sm">{equipment.distance} km from your location</p>}
       </CardContent>

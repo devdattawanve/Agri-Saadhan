@@ -107,6 +107,10 @@
             "General Farm Equipment"
           ]
         },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the equipment for the user."
+        },
         "ownerId": {
           "type": "string",
           "description": "The UID of the user who owns this equipment."
@@ -119,22 +123,15 @@
           "type": "object",
           "description": "The rental price of the equipment.",
           "properties": {
-            "amount": {
-              "type": "number"
+            "perHour": {
+              "type": "number",
+              "description": "Price per hour"
             },
-            "unit": {
-              "type": "string",
-              "enum": [
-                "hour",
-                "day",
-                "acre"
-              ]
+            "perDay": {
+              "type": "number",
+              "description": "Price per day"
             }
-          },
-          "required": [
-            "amount",
-            "unit"
-          ]
+          }
         },
         "verified": {
           "type": "boolean",

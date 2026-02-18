@@ -82,29 +82,57 @@ export default function EquipmentDetailPage() {
                         Owned by {equipment.owner} in {equipment.village}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {equipment.distance && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{equipment.village} ({equipment.distance}km away)</span>
-                      </div>
-                    )}
-                    {equipment.travelTime && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>Approx. {equipment.travelTime} mins by Tractor</span>
-                      </div>
-                    )}
+                <CardContent className="space-y-6">
+                    <div>
+                        <h3 className="font-semibold font-headline mb-2">Description</h3>
+                        <p className="text-sm text-muted-foreground">{equipment.description || "No description provided."}</p>
+                    </div>
+                    
                     <Separator />
-                    <div className="space-y-2">
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                          <h3 className="font-semibold font-headline">Location</h3>
+                           <div className="flex items-center gap-2 text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              <span>{equipment.village}</span>
+                          </div>
+                      </div>
+                       {equipment.travelTime && (
+                         <div>
+                            <h3 className="font-semibold font-headline">Est. Travel Time</h3>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>Approx. {equipment.travelTime} mins by Tractor</span>
+                            </div>
+                         </div>
+                        )}
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
                         <h3 className="font-semibold font-headline">Rental Price</h3>
-                        <p className="text-3xl font-bold text-primary">
-                            ₹{equipment.price.amount}
-                            <span className="text-lg font-normal text-muted-foreground"> / {equipment.price.unit}</span>
-                        </p>
+                        <div className="flex items-baseline gap-6 mt-2">
+                            {equipment.price?.perHour && (
+                                <p className="text-2xl font-bold text-primary">
+                                    ₹{equipment.price.perHour}
+                                    <span className="text-base font-normal text-muted-foreground"> / hour</span>
+                                </p>
+                            )}
+                            {equipment.price?.perDay && (
+                                <p className="text-2xl font-bold text-primary">
+                                    ₹{equipment.price.perDay}
+                                    <span className="text-base font-normal text-muted-foreground"> / day</span>
+                                </p>
+                            )}
+                        </div>
+                         {!equipment.price?.perHour && !equipment.price?.perDay && (
+                             <p className="text-muted-foreground">Price available on request.</p>
+                         )}
                     </div>
                 </CardContent>
-                <CardFooter className="mt-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardFooter className="mt-auto grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
                     <Button size="lg" variant="outline"><Phone className="mr-2 h-4 w-4"/> Call Now</Button>
                     <Button size="lg" className="bg-primary hover:bg-primary/90" asChild>
                         <Link href={bookingLink}>

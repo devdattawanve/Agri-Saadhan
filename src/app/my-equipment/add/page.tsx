@@ -8,14 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
-
 const equipmentTypes = ["Tractor", "Rotavator", "Plow", "Harvester", "Sprayer", "General Farm Equipment"];
-const priceUnits = ["hour", "day", "acre"];
 
 export default function AddEquipmentPage() {
     const { user, isUserLoading } = useUser();
@@ -25,9 +24,11 @@ export default function AddEquipmentPage() {
 
     const [name, setName] = useState("");
     const [type, setType] = useState("");
+    const [description, setDescription] = useState("");
     const [village, setVillage] = useState("");
-    const [priceAmount, setPriceAmount] = useState("");
-    const [priceUnit, setPriceUnit] = useState("");
+    const [pricePerHour, setPricePerHour] = useState("");
+    const [pricePerDay, setPricePerDay] = useState("");
+    const [imageUrl, setImageUrl] = useState("");
     const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
     
     const [loading, setLoading] = useState(false);
@@ -62,24 +63,26 @@ export default function AddEquipmentPage() {
             toast({ variant: "destructive", title: "Not logged in", description: "You must be logged in to add equipment." });
             return;
         }
-        if (!name || !type || !village || !priceAmount || !priceUnit) {
-            toast({ variant: "destructive", title: "Missing Fields", description: "Please fill out all the equipment details." });
+        if (!name || !type || !village || (!pricePerHour && !pricePerDay)) {
+            toast({ variant: "destructive", title: "Missing Fields", description: "Please fill out name, type, village, and at least one price." });
             return;
         }
 
         setLoading(true);
 
         const defaultImage = PlaceHolderImages.find(img => img.id.includes(type.toLowerCase())) || PlaceHolderImages[0];
+        const finalImageUrl = imageUrl || defaultImage.imageUrl;
 
         try {
             const equipmentColRef = collection(firestore, "equipment");
             await addDocumentNonBlocking(equipmentColRef, {
                 name,
                 type,
+                description,
                 village,
                 price: {
-                    amount: Number(priceAmount),
-                    unit: priceUnit,
+                    perHour: pricePerHour ? Number(pricePerHour) : null,
+                    perDay: pricePerDay ? Number(pricePerDay) : null,
                 },
                 ownerId: user.uid,
                 verified: false,
@@ -87,8 +90,8 @@ export default function AddEquipmentPage() {
                 latitude: coords?.lat || null,
                 longitude: coords?.lng || null,
                 geohash: "tbd", // To be calculated on the backend or with a library
-                imageUrl: defaultImage.imageUrl,
-                imageHint: defaultImage.imageHint,
+                imageUrl: finalImageUrl,
+                imageHint: defaultImage.imageHint, // Fallback hint
                 createdAt: serverTimestamp(),
             });
 
@@ -136,34 +139,57 @@ export default function AddEquipmentPage() {
                     </div>
                 </div>
 
-                 <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" placeholder="Describe the equipment, its condition, and any special features." value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                
+                <div className="space-y-2">
+                    <Label>Equipment Image</Label>
                     <div className="space-y-2">
-                        <Label htmlFor="village">Village / Location</Label>
-                         <div className="flex gap-2">
-                            <Input id="village" placeholder="e.g. Ramgarh" value={village} onChange={(e) => setVillage(e.target.value)} />
-                            <Button variant="outline" size="icon" onClick={handleDetectLocation} disabled={detectingLocation}>
-                                {detectingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                            </Button>
+                        <div className="flex gap-2">
+                            <LinkIcon className="h-10 text-muted-foreground"/>
+                            <Input id="imageUrl" type="url" placeholder="Paste image URL here" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
                         </div>
-                        {coords && <p className="text-xs text-green-600">Location captured successfully!</p>}
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">
+                                or
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                             <ImageIcon className="h-10 text-muted-foreground"/>
+                             <Input id="imageFile" type="file" className="text-muted-foreground" />
+                        </div>
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="priceAmount">Rental Price</Label>
-                        <Input id="priceAmount" type="number" placeholder="e.g. 500" value={priceAmount} onChange={(e) => setPriceAmount(e.target.value)} />
+                <div className="space-y-2">
+                    <Label htmlFor="village">Village / Location</Label>
+                        <div className="flex gap-2">
+                        <Input id="village" placeholder="e.g. Ramgarh" value={village} onChange={(e) => setVillage(e.target.value)} />
+                        <Button variant="outline" size="icon" onClick={handleDetectLocation} disabled={detectingLocation}>
+                            {detectingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                        </Button>
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="priceUnit">Price Unit</Label>
-                        <Select onValueChange={setPriceUnit} value={priceUnit}>
-                            <SelectTrigger id="priceUnit">
-                                <SelectValue placeholder="Select a unit" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {priceUnits.map(u => <SelectItem key={u} value={u}>per {u}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                    {coords && <p className="text-xs text-green-600">Location captured successfully!</p>}
+                </div>
+
+                <div>
+                    <Label>Rental Price</Label>
+                    <div className="grid md:grid-cols-2 gap-4 mt-2">
+                        <div className="relative">
+                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                           <Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-6" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} />
+                        </div>
+                        <div className="relative">
+                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                           <Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-6" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} />
+                        </div>
                     </div>
                 </div>
 
