@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, MapPin, Clock, Phone, FileText, Tractor } from "lucide-react";
+import { ShieldCheck, MapPin, User, Truck, FileText, Tractor, IndianRupee } from "lucide-react";
 import Link from "next/link";
-import { notFound, useSearchParams, useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import type { Equipment } from "@/lib/data";
@@ -45,7 +45,7 @@ export default function EquipmentDetailPage() {
             <h1 className="mt-4 text-3xl font-bold font-headline">Equipment Not Found</h1>
             <p className="text-muted-foreground">The equipment you are looking for does not exist or has been removed.</p>
             <Button asChild className="mt-6">
-                <Link href="/dashboard">Back to Marketplace</Link>
+                <Link href="/equipment">Back to Marketplace</Link>
             </Button>
         </div>
     );
@@ -79,7 +79,7 @@ export default function EquipmentDetailPage() {
                 <CardHeader>
                     <CardTitle className="font-headline text-3xl">{equipment.name}</CardTitle>
                     <CardDescription>
-                        Owned by {equipment.owner} in {equipment.village}
+                        in {equipment.village}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -90,21 +90,21 @@ export default function EquipmentDetailPage() {
                     
                     <Separator />
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                          <h3 className="font-semibold font-headline">Location</h3>
-                           <div className="flex items-center gap-2 text-muted-foreground">
-                              <MapPin className="h-4 w-4" />
-                              <span>{equipment.village}</span>
-                          </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{equipment.village}</span>
                       </div>
-                       {equipment.travelTime && (
-                         <div>
-                            <h3 className="font-semibold font-headline">Est. Travel Time</h3>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <Clock className="h-4 w-4" />
-                                <span>Approx. {equipment.travelTime} mins by Tractor</span>
-                            </div>
+                       {equipment.driverChargePerHour && (
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                             <User className="h-4 w-4" />
+                             <span>Driver available</span>
+                         </div>
+                        )}
+                        {equipment.deliveryFee && (
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                             <Truck className="h-4 w-4" />
+                             <span>Delivery available</span>
                          </div>
                         )}
                     </div>
@@ -112,19 +112,31 @@ export default function EquipmentDetailPage() {
                     <Separator />
                     
                     <div>
-                        <h3 className="font-semibold font-headline">Rental Price</h3>
-                        <div className="flex items-baseline gap-6 mt-2">
+                        <h3 className="font-semibold font-headline mb-2">Pricing</h3>
+                        <div className="space-y-2">
                             {equipment.price?.perHour && (
-                                <p className="text-2xl font-bold text-primary">
-                                    ₹{equipment.price.perHour}
-                                    <span className="text-base font-normal text-muted-foreground"> / hour</span>
-                                </p>
+                                <div className="flex justify-between items-baseline">
+                                  <span className="text-muted-foreground">Base Rate (per hour)</span>
+                                  <p className="font-bold text-primary">₹{equipment.price.perHour}</p>
+                                </div>
                             )}
                             {equipment.price?.perDay && (
-                                <p className="text-2xl font-bold text-primary">
-                                    ₹{equipment.price.perDay}
-                                    <span className="text-base font-normal text-muted-foreground"> / day</span>
-                                </p>
+                                <div className="flex justify-between items-baseline">
+                                  <span className="text-muted-foreground">Base Rate (per day)</span>
+                                  <p className="font-bold text-primary">₹{equipment.price.perDay}</p>
+                                </div>
+                            )}
+                             {equipment.driverChargePerHour && (
+                                <div className="flex justify-between items-baseline">
+                                  <span className="text-muted-foreground">Driver Charge (per hour)</span>
+                                  <p className="font-bold text-primary">₹{equipment.driverChargePerHour}</p>
+                                </div>
+                            )}
+                             {equipment.deliveryFee && (
+                                <div className="flex justify-between items-baseline">
+                                  <span className="text-muted-foreground">Delivery Fee (flat)</span>
+                                  <p className="font-bold text-primary">₹{equipment.deliveryFee}</p>
+                                </div>
                             )}
                         </div>
                          {!equipment.price?.perHour && !equipment.price?.perDay && (
@@ -132,11 +144,10 @@ export default function EquipmentDetailPage() {
                          )}
                     </div>
                 </CardContent>
-                <CardFooter className="mt-auto grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
-                    <Button size="lg" variant="outline"><Phone className="mr-2 h-4 w-4"/> Call Now</Button>
-                    <Button size="lg" className="bg-primary hover:bg-primary/90" asChild>
+                <CardFooter className="mt-auto bg-muted/50 p-6">
+                    <Button size="lg" className="w-full bg-primary hover:bg-primary/90" asChild>
                         <Link href={bookingLink}>
-                            <FileText className="mr-2 h-4 w-4" /> Book Now
+                            <FileText className="mr-2 h-4 w-4" /> Request to Book
                         </Link>
                     </Button>
                 </CardFooter>
@@ -164,8 +175,7 @@ const DetailPageSkeleton = () => (
                     <Skeleton className="h-6 w-1/4 mb-2" />
                     <Skeleton className="h-12 w-1/2 mb-auto" />
                     
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Skeleton className="h-12 w-full" />
+                    <div className="mt-8 grid grid-cols-1 gap-4">
                         <Skeleton className="h-12 w-full" />
                     </div>
                 </div>

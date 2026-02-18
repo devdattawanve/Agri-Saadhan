@@ -1,11 +1,12 @@
 import { PlaceHolderImages } from './placeholder-images';
+import type { Timestamp } from 'firebase/firestore';
 
 export interface Equipment {
   id: string;
   name: string;
   type: 'Tractor' | 'Rotavator' | 'Plow' | 'Harvester' | 'Sprayer' | 'General Farm Equipment';
   description: string;
-  owner: string; // This is for display, ownerId will be the UID
+  owner?: string; // This is for display, ownerId will be the UID
   ownerId: string;
   village: string;
   distance?: number; // in km - will be calculated dynamically
@@ -15,12 +16,15 @@ export interface Equipment {
     perHour?: number;
     perDay?: number;
   };
+  driverChargePerHour?: number;
+  deliveryFee?: number;
   latitude: number;
   longitude: number;
   geohash: string;
   availabilityStatus: 'available' | 'maintenance';
   imageUrl: string;
   imageHint: string;
+  createdAt: Timestamp;
 }
 
 export interface Booking {
@@ -31,11 +35,20 @@ export interface Booking {
     beneficiary: string;
     sahayakId?: string;
     driverId?: string;
-    commissionEligible: boolean;
-    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'disputed';
+    status: 'pending' | 'confirmed' | 'rejected' | 'ongoing' | 'completed' | 'cancelled';
+    
+    startDate: Timestamp;
+    endDate: Timestamp;
+    requiresDriver: boolean;
+    pickupType: 'SELF_PICKUP' | 'OWNER_DELIVERY';
+
+    baseRate: number;
+    driverCharge: number;
+    deliveryCharge: number;
     totalAmount: number;
+
     sahayakCommission?: number;
     platformFee?: number;
-    createdAt: any; // Firestore Timestamp
-    updatedAt: any; // Firestore Timestamp
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 }

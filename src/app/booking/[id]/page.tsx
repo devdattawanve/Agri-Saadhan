@@ -1,208 +1,262 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { notFound, useRouter, useSearchParams, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, CheckCircle2, CircleDashed, Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, IndianRupee, User, Truck, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
-import { collection, doc, serverTimestamp } from "firebase/firestore";
-import type { Equipment } from "@/lib/data";
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
+import { collection, doc, serverTimestamp, query, where } from "firebase/firestore";
+import type { Equipment, Booking } from "@/lib/data";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format, differenceInHours, addDays, startOfDay } from 'date-fns';
+import { DateRange } from "react-day-picker";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 
 export default function BookingPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
-  const { user } = useUser();
-  const firestore = useFirestore();
+    const params = useParams();
+    const id = params.id as string;
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { toast } = useToast();
+    const { user } = useUser();
+    const firestore = useFirestore();
 
-  const [paymentOption, setPaymentOption] = useState("pay_on_delivery");
-  const [loading, setLoading] = useState(false);
-
-  const beneficiaryId = searchParams.get('beneficiaryId');
-  const isSahayakBooking = !!beneficiaryId;
-
-  const equipmentDocRef = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
-    return doc(firestore, 'equipment', id);
-  }, [firestore, id]);
-
-  const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
-
-  const getDisplayPrice = (eq: Equipment) => {
-    if (eq.price?.perHour) {
-      return { amount: eq.price.perHour, unit: 'hour' };
-    }
-    if (eq.price?.perDay) {
-      return { amount: eq.price.perDay, unit: 'day' };
-    }
-    return { amount: 0, unit: 'request' };
-  };
-
-  const handleConfirmBooking = async () => {
-    if (!user) {
-        toast({ variant: "destructive", title: "You must be logged in to book."});
-        return;
-    }
-    if (!equipment) {
-        toast({ variant: "destructive", title: "Equipment data not loaded."});
-        return;
-    }
-    setLoading(true);
+    // Form State
+    const [date, setDate] = useState<DateRange | undefined>(undefined);
+    const [requiresDriver, setRequiresDriver] = useState(false);
+    const [pickupType, setPickupType] = useState<'SELF_PICKUP' | 'OWNER_DELIVERY'>('SELF_PICKUP');
     
-    // Assumption: Use hourly price if available, otherwise daily.
-    const bookingAmount = equipment.price?.perHour || equipment.price?.perDay || 0;
+    const [costs, setCosts] = useState({ baseRate: 0, driverCharge: 0, deliveryCharge: 0, totalAmount: 0, durationHours: 0 });
+    const [loading, setLoading] = useState(false);
 
-    const bookingData = {
-        equipmentId: id,
-        ownerId: equipment.ownerId, 
-        driverId: null, // Placeholder
-        
-        createdBy: user.uid,
-        beneficiary: isSahayakBooking ? beneficiaryId : user.uid,
-        commissionEligible: isSahayakBooking,
-        sahayakId: isSahayakBooking ? user.uid : null,
+    const beneficiaryId = searchParams.get('beneficiaryId');
+    const isSahayakBooking = !!beneficiaryId;
 
-        status: 'pending',
-        paymentStatus: paymentOption.toUpperCase(),
-        totalAmount: bookingAmount,
-        sahayakCommission: 0, 
-        platformFee: 0, 
-        
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+    const equipmentDocRef = useMemoFirebase(() => firestore && id ? doc(firestore, 'equipment', id) : null, [firestore, id]);
+    const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
+
+    const bookingsQuery = useMemoFirebase(() => firestore && id ? query(collection(firestore, 'bookings'), where('equipmentId', '==', id), where('status', '==', 'confirmed')) : null, [firestore, id]);
+    const { data: existingBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
+
+    const disabledDates = useMemo(() => {
+        const dates = [{ before: startOfDay(new Date()) }];
+        existingBookings?.forEach(booking => {
+            dates.push({ from: booking.startDate.toDate(), to: booking.endDate.toDate() });
+        });
+        return dates;
+    }, [existingBookings]);
+    
+    useEffect(() => {
+        if (equipment && date?.from && date?.to) {
+            const hours = differenceInHours(date.to, date.from);
+            if (hours <= 0) {
+                setCosts({ baseRate: 0, driverCharge: 0, deliveryCharge: 0, totalAmount: 0, durationHours: 0 });
+                return;
+            };
+
+            const baseRate = (equipment.price.perHour || 0) * hours;
+            const driverCharge = requiresDriver ? (equipment.driverChargePerHour || 0) * hours : 0;
+            const deliveryCharge = pickupType === 'OWNER_DELIVERY' ? (equipment.deliveryFee || 0) : 0;
+            const totalAmount = baseRate + driverCharge + deliveryCharge;
+            setCosts({ baseRate, driverCharge, deliveryCharge, totalAmount, durationHours: hours });
+        } else {
+             setCosts({ baseRate: 0, driverCharge: 0, deliveryCharge: 0, totalAmount: 0, durationHours: 0 });
+        }
+    }, [equipment, date, requiresDriver, pickupType]);
+
+
+    const handleRequestBooking = async () => {
+        if (!user || !equipment || !date?.from || !date?.to) {
+            toast({ variant: "destructive", title: "Missing Information", description: "Please select a valid date range to make a booking." });
+            return;
+        }
+        if (costs.totalAmount <= 0) {
+            toast({ variant: "destructive", title: "Invalid Duration", description: "The booking duration must be at least one hour." });
+            return;
+        }
+        setLoading(true);
+
+        const bookingData = {
+            equipmentId: id,
+            equipmentName: equipment.name,
+            equipmentImage: equipment.imageUrl,
+            ownerId: equipment.ownerId,
+            createdBy: user.uid,
+            beneficiary: isSahayakBooking ? beneficiaryId : user.uid,
+            sahayakId: isSahayakBooking ? user.uid : null,
+
+            status: 'pending',
+            startDate: date.from,
+            endDate: date.to,
+            requiresDriver,
+            pickupType,
+
+            ...costs,
+
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        try {
+            const bookingsColRef = collection(firestore, 'bookings');
+            const newDocRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
+            
+            // Now update the doc with its own ID
+            if (newDocRef?.id) {
+                const finalDocRef = doc(firestore, 'bookings', newDocRef.id);
+                await setDocumentNonBlocking(finalDocRef, { id: newDocRef.id }, { merge: true });
+            }
+            
+            toast({
+                title: "Booking Requested!",
+                description: "The equipment owner has been notified. You can track the status in 'My Bookings'.",
+            });
+            router.push('/my-bookings');
+
+        } catch (error: any) {
+            console.error("Booking failed:", error);
+            toast({
+                variant: "destructive",
+                title: "Booking Failed",
+                description: error.message || "There was a problem with your booking request.",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    try {
-        const bookingsColRef = collection(firestore, 'bookings');
-        const newBookingRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
-        // Add booking id to the object before sending to firestore.
-        if(newBookingRef) {
-             const bookingDocWithId = { ...bookingData, id: newBookingRef.id };
-             await addDocumentNonBlocking(bookingsColRef, bookingDocWithId);
-        }
-        
-        toast({
-            title: "Booking Confirmed!",
-            description: `Your booking for ${equipment.name} is confirmed.`,
-        });
-        router.push('/dashboard');
-
-    } catch (error: any) {
-        console.error("Booking failed:", error);
-        toast({
-            variant: "destructive",
-            title: "Booking Failed",
-            description: error.message || "There was a problem confirming your booking.",
-        });
-    } finally {
-        setLoading(false);
+    if (isEquipmentLoading || areBookingsLoading) {
+        return <div className="container mx-auto py-8 max-w-4xl"><Skeleton className="h-96 w-full" /></div>;
     }
-  }
 
-  if (isEquipmentLoading) {
-      return (
-          <div className="container mx-auto py-8 max-w-4xl">
-              <Skeleton className="h-10 w-2/3 mb-6" />
-              <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                      <Skeleton className="h-24 w-full mb-8" />
-                      <Skeleton className="h-48 w-full" />
-                  </div>
-                  <div>
-                      <Skeleton className="h-64 w-full" />
-                  </div>
-              </div>
-              <Skeleton className="h-12 w-full max-w-md mx-auto mt-8" />
-          </div>
-      )
-  }
+    if (!equipment) {
+        notFound();
+    }
 
-  if (!equipment) {
-      notFound();
-  }
+    return (
+        <div className="container mx-auto py-8 max-w-4xl">
+            <h1 className="text-3xl font-bold font-headline mb-2">Request to Book</h1>
+            <p className="text-lg text-muted-foreground mb-6">{equipment.name}</p>
+            
+            <div className="grid md:grid-cols-[2fr_1fr] gap-8 items-start">
+                <div className="space-y-8">
+                    {/* Date Picker Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-xl">1. Select Booking Duration</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex justify-center">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date?.from ? (
+                                    date.to ? (
+                                        <>
+                                        {format(date.from, "LLL dd, y HH:mm")} -{" "}
+                                        {format(date.to, "LLL dd, y HH:mm")}
+                                        </>
+                                    ) : (
+                                        format(date.from, "LLL dd, y HH:mm")
+                                    )
+                                    ) : (
+                                    <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                    disabled={disabledDates}
+                                />
+                                </PopoverContent>
+                            </Popover>
+                        </CardContent>
+                    </Card>
 
-  const displayPrice = getDisplayPrice(equipment);
+                     {/* Add-ons Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-xl">2. Select Add-ons</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <Label htmlFor="requires-driver" className="font-semibold flex items-center gap-2"><User />Request a Driver</Label>
+                                    <p className="text-xs text-muted-foreground">An experienced driver will operate the equipment.</p>
+                                </div>
+                                <Switch id="requires-driver" checked={requiresDriver} onCheckedChange={setRequiresDriver} disabled={!equipment.driverChargePerHour} />
+                            </div>
+                            <Separator />
+                             <div>
+                                <Label className="font-semibold flex items-center gap-2 mb-3"><Truck/>Pickup Type</Label>
+                                <RadioGroup value={pickupType} onValueChange={(val) => setPickupType(val as any)} className="space-y-4">
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="SELF_PICKUP" id="r1" />
+                                        <Label htmlFor="r1">Self Pickup</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="OWNER_DELIVERY" id="r2" disabled={!equipment.deliveryFee} />
+                                        <Label htmlFor="r2" className={!equipment.deliveryFee ? 'text-muted-foreground' : ''}>Owner Delivery</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-  return (
-    <div className="container mx-auto py-8 max-w-4xl">
-        <h1 className="text-3xl font-bold font-headline mb-2">Confirm Your Booking</h1>
-        {isSahayakBooking && <p className="text-lg text-muted-foreground mb-6">You are booking on behalf of another farmer.</p>}
-        <div className="grid md:grid-cols-2 gap-8">
-            <div>
-                <Card>
-                    <CardHeader className="flex flex-row items-start gap-4">
-                        <Image src={equipment.imageUrl} alt={equipment.name} width={80} height={60} className="rounded-lg object-cover" />
-                        <div>
-                            <CardTitle className="font-headline">{equipment.name}</CardTitle>
-                            <CardDescription>Price: ₹{displayPrice.amount}/{displayPrice.unit}</CardDescription>
-                        </div>
-                    </CardHeader>
-                </Card>
+                </div>
 
-                <Card className="mt-8">
+                {/* Cost Summary Card */}
+                <Card className="sticky top-24">
                     <CardHeader>
-                        <CardTitle className="font-headline text-xl">Payment Options</CardTitle>
+                        <CardTitle className="font-headline text-xl">Booking Summary</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <RadioGroup defaultValue="pay_on_delivery" onValueChange={setPaymentOption} className="space-y-4">
-                            <div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="pay_on_delivery" id="r1" />
-                                    <Label htmlFor="r1">Pay on Delivery</Label>
-                                </div>
-                                <p className="text-xs text-muted-foreground ml-6">Pay after the work is completed.</p>
-                            </div>
-                            <div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="credit" id="r2" disabled={!isSahayakBooking} />
-                                    <Label htmlFor="r2" className={!isSahayakBooking ? 'text-muted-foreground' : ''}>Credit (via Sahayak)</Label>
-                                </div>
-                                <p className="text-xs text-muted-foreground ml-6">Only available if booking through a Sahayak.</p>
-                            </div>
-                        </RadioGroup>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Base Rate ({costs.durationHours} hrs)</span>
+                            <span className="font-medium">₹{costs.baseRate.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Driver Charge</span>
+                            <span className="font-medium">₹{costs.driverCharge.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Delivery Fee</span>
+                            <span className="font-medium">₹{costs.deliveryCharge.toFixed(2)}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-bold text-lg">
+                            <span>Total</span>
+                            <span>₹{costs.totalAmount.toFixed(2)}</span>
+                        </div>
                     </CardContent>
+                    <CardFooter>
+                         <Button size="lg" className="w-full bg-primary hover:bg-primary/90" onClick={handleRequestBooking} disabled={loading || costs.totalAmount <= 0}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Request Booking"}
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
-            <div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-xl">Diesel Tracker Protocol</CardTitle>
-                        <CardDescription>Ensure fair fuel usage for your rental.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex items-start gap-4">
-                            <CheckCircle2 className="h-6 w-6 text-accent mt-1 shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">1. Start of Work</h4>
-                                <p className="text-sm text-muted-foreground">Driver uploads photo of the fuel gauge before starting.</p>
-                                <Button variant="outline" size="sm" className="mt-2"><Upload className="mr-2 h-4 w-4" /> Upload Start Photo</Button>
-                            </div>
-                        </div>
-                         <div className="flex items-start gap-4">
-                            <CircleDashed className="h-6 w-6 text-muted-foreground mt-1 shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">2. End of Work</h4>
-                                <p className="text-sm text-muted-foreground">Driver uploads another photo after finishing the work.</p>
-                                 <Button variant="outline" size="sm" className="mt-2" disabled><Upload className="mr-2 h-4 w-4" /> Upload End Photo</Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                 </Card>
-            </div>
         </div>
-        <div className="mt-8 text-center">
-            <Button size="lg" className="w-full max-w-md bg-primary hover:bg-primary/90" onClick={handleConfirmBooking} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? "Confirming..." : "Confirm Booking"}
-            </Button>
-        </div>
-    </div>
-  );
+    );
 }

@@ -133,6 +133,14 @@
             }
           }
         },
+        "driverChargePerHour": {
+            "type": "number",
+            "description": "Optional additional charge per hour if a driver is requested."
+        },
+        "deliveryFee": {
+            "type": "number",
+            "description": "Optional flat fee for delivering the equipment to the farmer."
+        },
         "verified": {
           "type": "boolean",
           "description": "Whether the equipment is verified by the Gram Panchayat. Defaults to false."
@@ -189,10 +197,6 @@
         "equipmentId": {
           "type": "string"
         },
-        "farmerId": {
-          "type": "string",
-          "description": "The end-user (beneficiary) of the equipment. DEPRECATED, use 'beneficiary'."
-        },
         "ownerId": {
           "type": "string"
         },
@@ -212,22 +216,47 @@
           "type": "string",
           "description": "UID of the farmer who will use the equipment."
         },
-        "commissionEligible": {
-          "type": "boolean"
-        },
         "status": {
           "type": "string",
           "enum": [
             "pending",
-            "accepted",
-            "in_progress",
+            "confirmed",
+            "rejected",
+            "ongoing",
             "completed",
-            "cancelled",
-            "disputed"
+            "cancelled"
           ]
         },
+        "startDate": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "endDate": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "requiresDriver": {
+            "type": "boolean"
+        },
+        "pickupType": {
+            "type": "string",
+            "enum": ["SELF_PICKUP", "OWNER_DELIVERY"]
+        },
+        "baseRate": {
+            "type": "number",
+            "description": "Calculated base cost for the equipment rental duration."
+        },
+        "driverCharge": {
+            "type": "number",
+            "description": "Calculated cost for the driver."
+        },
+        "deliveryCharge": {
+            "type": "number",
+            "description": "Calculated cost for delivery."
+        },
         "totalAmount": {
-            "type": "number"
+            "type": "number",
+            "description": "The total final amount for the booking."
         },
         "sahayakCommission": {
             "type": "number"
@@ -236,6 +265,10 @@
             "type": "number"
         },
         "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
           "type": "string",
           "format": "date-time"
         }
@@ -247,6 +280,8 @@
         "createdBy",
         "beneficiary",
         "status",
+        "startDate",
+        "endDate",
         "totalAmount"
       ]
     }

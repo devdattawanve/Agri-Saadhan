@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Loader2, LinkIcon, UploadCloud } from "lucide-react";
+import { MapPin, Loader2, LinkIcon, UploadCloud, IndianRupee } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const equipmentTypes = ["Tractor", "Rotavator", "Plow", "Harvester", "Sprayer", "General Farm Equipment"];
@@ -30,6 +30,8 @@ export default function AddEquipmentPage() {
     const [village, setVillage] = useState("");
     const [pricePerHour, setPricePerHour] = useState("");
     const [pricePerDay, setPricePerDay] = useState("");
+    const [driverCharge, setDriverCharge] = useState("");
+    const [deliveryFee, setDeliveryFee] = useState("");
     
     const [imageUrl, setImageUrl] = useState("");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -96,6 +98,8 @@ export default function AddEquipmentPage() {
 
         setLoading(true);
 
+        // TODO: In a real app, upload the imagePreview (if it's a data URI) to Firebase Storage and get a URL.
+        // For now, we'll just use the data URI directly or the imageUrl, which works but is inefficient for large images.
         const defaultImage = PlaceHolderImages.find(img => img.id.includes(type.toLowerCase())) || PlaceHolderImages[0];
         const finalImageUrl = imagePreview || imageUrl || defaultImage.imageUrl;
 
@@ -110,6 +114,8 @@ export default function AddEquipmentPage() {
                     perHour: pricePerHour ? Number(pricePerHour) : null,
                     perDay: pricePerDay ? Number(pricePerDay) : null,
                 },
+                driverChargePerHour: driverCharge ? Number(driverCharge) : null,
+                deliveryFee: deliveryFee ? Number(deliveryFee) : null,
                 ownerId: user.uid,
                 verified: false,
                 availabilityStatus: "available",
@@ -191,7 +197,7 @@ export default function AddEquipmentPage() {
                                 />
                                 {imagePreview ? (
                                     <div className="relative w-48 h-32">
-                                        <Image src={imagePreview} alt="Equipment preview" width={192} height={128} className="rounded-md object-cover" />
+                                        <Image src={imagePreview} alt="Equipment preview" layout="fill" className="rounded-md object-cover" />
                                     </div>
                                 ) : (
                                     <>
@@ -232,15 +238,29 @@ export default function AddEquipmentPage() {
                 </div>
 
                 <div>
-                    <Label>Rental Price</Label>
+                    <Label>Base Rental Price</Label>
                     <div className="grid md:grid-cols-2 gap-4 mt-2">
                         <div className="relative">
-                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
-                           <Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-6" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} />
+                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-8" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} />
                         </div>
                         <div className="relative">
-                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
-                           <Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-6" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} />
+                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-8" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <Label>Additional Charges (Optional)</Label>
+                    <div className="grid md:grid-cols-2 gap-4 mt-2">
+                        <div className="relative">
+                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input id="driverCharge" type="number" placeholder="Driver charge / hour" className="pl-8" value={driverCharge} onChange={(e) => setDriverCharge(e.target.value)} />
+                        </div>
+                        <div className="relative">
+                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input id="deliveryFee" type="number" placeholder="Delivery Fee (flat)" className="pl-8" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
                         </div>
                     </div>
                 </div>
