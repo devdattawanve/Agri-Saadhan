@@ -14,7 +14,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Validates that the ownerId in new booking data matches the actual owner of the equipment.
     // Includes an exists() check to prevent errors on non-existent documents.
     function isCorrectEquipmentOwner(bookingData) {
         let equipmentPath = /databases/$(database)/documents/equipment/$(bookingData.equipmentId);
@@ -22,10 +21,7 @@ service cloud.firestore {
                get(equipmentPath).data.ownerId == bookingData.ownerId;
     }
 
-    // Validates that the participants array in new booking data is correctly formed.
     function hasValidParticipants(bookingData) {
-      // Use hasAll for a more robust check of required participants.
-      // It correctly handles the de-duplicated array from the client.
       return bookingData.participants.hasAll([bookingData.ownerId, bookingData.beneficiary, request.auth.uid]);
     }
 
@@ -42,35 +38,25 @@ service cloud.firestore {
     // EQUIPMENT
     match /equipment/{equipmentId} {
         allow read: if true;
-        // User can only create equipment listings for themselves.
         allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-        // Only the owner can update or delete their own listing.
         allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // READ: Users can get a specific booking if they are a participant.
       allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
       
-      // LIST: Users can list all bookings where they are a participant.
-      // The client-side code will then filter this list as needed.
-      allow list: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // Allow users to list their own bookings (as beneficiary)
+      allow list: if isSignedIn() && request.query.beneficiary == request.auth.uid;
+      // Allow owners to list bookings for their equipment
+      allow list: if isSignedIn() && request.query.ownerId == request.auth.uid;
       
-      // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
-                      // 1. Creator must be the authenticated user.
                       && request.resource.data.createdBy == request.auth.uid
-                      // 2. Initial status must be 'pending'.
                       && request.resource.data.status == 'pending'
-                      // 3. The booking data must correctly reference the equipment's true owner.
                       && isCorrectEquipmentOwner(request.resource.data)
-                      // 4. The participants array must be correctly formed and include the creator.
                       && hasValidParticipants(request.resource.data);
 
-
-      // UPDATE: Different actors have different update permissions.
-      
       // Rule 1: The owner can confirm/reject a pending booking.
       allow update: if isSignedIn()
                       && request.auth.uid == resource.data.ownerId
@@ -85,7 +71,6 @@ service cloud.firestore {
                       && request.resource.data.status == 'cancelled'
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
       
-      // Disallow deletion to maintain booking history.
       allow delete: if false;
     }
   }

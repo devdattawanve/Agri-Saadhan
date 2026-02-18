@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, orderBy } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -26,23 +26,18 @@ export default function OwnerBookingsPage() {
 
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
+        // Query for bookings where the current user is the owner, ordered by creation date
         return query(
             collection(firestore, "bookings"),
-            where("participants", "array-contains", user.uid)
+            where("ownerId", "==", user.uid),
+            orderBy("createdAt", "desc")
         );
     }, [user, firestore]);
 
-    const { data: allOwnerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
     
-    const sortedBookings = useMemo(() => {
-        if (!allOwnerBookings) return null;
-        return allOwnerBookings
-            .filter(b => b.ownerId === user?.uid)
-            .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    }, [allOwnerBookings, user]);
-
-    const pendingBookings = useMemo(() => sortedBookings?.filter(b => b.status === 'pending') ?? [], [sortedBookings]);
-    const otherBookings = useMemo(() => sortedBookings?.filter(b => b.status !== 'pending') ?? [], [sortedBookings]);
+    const pendingBookings = useMemo(() => ownerBookings?.filter(b => b.status === 'pending') ?? [], [ownerBookings]);
+    const otherBookings = useMemo(() => ownerBookings?.filter(b => b.status !== 'pending') ?? [], [ownerBookings]);
 
     return (
         <div className="space-y-8">
@@ -77,7 +72,7 @@ export default function OwnerBookingsPage() {
                             <div>
                                 <p className="font-semibold">{booking.equipmentName}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    Beneficiary: <span className="font-mono text-sm">{booking.beneficiary.substring(0, 7)}...</span>
+                                    Booked By: <span className="font-mono text-sm">{booking.createdBy.substring(0, 7)}...</span>
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                     Received: {booking.createdAt?.toDate ? format(booking.createdAt.toDate(), 'PP') : 'Just now'}
@@ -90,7 +85,7 @@ export default function OwnerBookingsPage() {
                         </div>
                     )) : !isLoading && (
                          <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
-                            You have not received any bookings for your equipment yet.
+                            You have no historical bookings for your equipment.
                         </div>
                     )}
                 </CardContent>
