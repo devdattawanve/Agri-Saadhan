@@ -17,7 +17,7 @@ export default function MyBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"), 
-            where("participants", "array-contains", user.uid),
+            where("beneficiary", "==", user.uid),
             orderBy("createdAt", "desc")
         );
     }, [user, firestore]);

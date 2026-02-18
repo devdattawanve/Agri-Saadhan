@@ -64,10 +64,15 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // READ/LIST: User must be in the 'participants' array.
-      // List queries must use an 'array-contains' filter on the participants field.
+      // GET: User must be in the 'participants' array.
       allow get: if isSignedIn() && isBookingParticipant(resource.data);
-      allow list: if isSignedIn() && request.query.where.participants.has(request.auth.uid);
+
+      // LIST: Allow if querying by owner, creator, or beneficiary.
+      // Firestore ORs these rules. The client query MUST match one of them.
+      allow list: if isSignedIn() && request.query.where.ownerId == request.auth.uid;
+      allow list: if isSignedIn() && request.query.where.createdBy == request.auth.uid;
+      allow list: if isSignedIn() && request.query.where.beneficiary == request.auth.uid;
+
       
       // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
