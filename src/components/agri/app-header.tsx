@@ -20,6 +20,7 @@ import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from "@/fireb
 import { doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const pageTitles: { [key: string]: string } = {
   "/dashboard": "Home",
@@ -40,7 +41,7 @@ export function AppHeader() {
   const searchParams = useSearchParams();
   const auth = useAuth();
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
@@ -52,7 +53,7 @@ export function AppHeader() {
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
-  const { data: userData } = useDoc(userDocRef);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc(userDocRef);
   
   const beneficiaryId = searchParams.get('beneficiaryId');
   const isWorkMode = isClient && !!beneficiaryId;
@@ -94,6 +95,8 @@ export function AppHeader() {
     );
   }
 
+  const isLoading = isUserLoading || isUserDataLoading;
+
   return (
     <header className={cn(
         "flex h-16 items-center gap-4 border-b px-4 md:px-6 sticky top-0 z-30",
@@ -112,33 +115,42 @@ export function AppHeader() {
           Equipment
         </Link>
         
-        {isFarmer && (
-            <Link href="/my-bookings" className={navLinkClass('/my-bookings')}>
-                My Bookings
-            </Link>
-        )}
-
-        {isOwner && (
-            <>
-                <Link href="/my-equipment" className={navLinkClass('/my-equipment')}>
-                    My Equipment
+        {isLoading ? (
+          <>
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-24" />
+          </>
+        ) : (
+          <>
+            {isFarmer && (
+                <Link href="/my-bookings" className={navLinkClass('/my-bookings')}>
+                    My Bookings
                 </Link>
-                <Link href="/owner-bookings" className={navLinkClass('/owner-bookings')}>
-                    Bookings
+            )}
+
+            {isOwner && (
+                <>
+                    <Link href="/my-equipment" className={navLinkClass('/my-equipment')}>
+                        My Equipment
+                    </Link>
+                    <Link href="/owner-bookings" className={navLinkClass('/owner-bookings')}>
+                        Bookings
+                    </Link>
+                </>
+            )}
+
+            {isDriver && (
+                <Link href="/driver-dashboard" className={navLinkClass('/driver-dashboard')}>
+                    Driver
                 </Link>
-            </>
-        )}
+            )}
 
-        {isDriver && (
-            <Link href="/driver-dashboard" className={navLinkClass('/driver-dashboard')}>
-                Driver
-            </Link>
-        )}
-
-        {isSahayakVerified && (
-            <Link href="/sahayak" className={navLinkClass('/sahayak')}>
-                Sahayak
-            </Link>
+            {isSahayakVerified && (
+                <Link href="/sahayak" className={navLinkClass('/sahayak')}>
+                    Sahayak
+                </Link>
+            )}
+          </>
         )}
       </nav>
       <Sheet>
@@ -166,7 +178,12 @@ export function AppHeader() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
-              {userData?.name ? (
+              {isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              ) : userData?.name ? (
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{userData.name}</p>
                   <p className="text-xs leading-none text-muted-foreground">
