@@ -28,22 +28,19 @@ export default function OwnerBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"),
-            where("participants", "array-contains", user.uid)
+            where("ownerId", "==", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
     
-    // Filter to get only bookings for equipment the user owns, and sort them
-    const ownerBookings = useMemo(() => {
-        if (!allUserBookings) return null;
-        return allUserBookings
-            .filter(b => b.ownerId === user?.uid)
-            .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    }, [allUserBookings, user]);
+    const sortedBookings = useMemo(() => {
+        if (!ownerBookings) return null;
+        return ownerBookings.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    }, [ownerBookings]);
 
-    const pendingBookings = useMemo(() => ownerBookings?.filter(b => b.status === 'pending') ?? [], [ownerBookings]);
-    const otherBookings = useMemo(() => ownerBookings?.filter(b => b.status !== 'pending') ?? [], [ownerBookings]);
+    const pendingBookings = useMemo(() => sortedBookings?.filter(b => b.status === 'pending') ?? [], [sortedBookings]);
+    const otherBookings = useMemo(() => sortedBookings?.filter(b => b.status !== 'pending') ?? [], [sortedBookings]);
 
     return (
         <div className="space-y-8">

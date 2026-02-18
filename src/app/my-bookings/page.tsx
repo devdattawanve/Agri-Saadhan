@@ -14,24 +14,21 @@ export default function MyBookingsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    // Query for all bookings where the user is a participant
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(
-            collection(firestore, "bookings"), 
-            where("participants", "array-contains", user.uid)
+            collection(firestore, "bookings"),
+            where("beneficiary", "==", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+    const { data: allBeneficiaryBookings, isLoading } = useCollection<Booking>(bookingsQuery);
 
-    // Filter to get only bookings where the user is the beneficiary, and sort them
     const bookings = useMemo(() => {
-        if (!allUserBookings) return null;
-        return allUserBookings
-            .filter(b => b.beneficiary === user?.uid)
+        if (!allBeneficiaryBookings) return null;
+        return allBeneficiaryBookings
             .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-    }, [allUserBookings, user]);
+    }, [allBeneficiaryBookings]);
 
 
     const renderContent = () => {

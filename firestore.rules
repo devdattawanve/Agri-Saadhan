@@ -14,14 +14,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Securely checks if a user is a verified Sahayak.
-    // Uses exists() to prevent errors on non-existent documents.
-    function isVerifiedSahayak(userId) {
-      return isSignedIn() &&
-             exists(/databases/$(database)/documents/users/$(userId)) &&
-             get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
-    }
-
     // Validates that the ownerId in new booking data matches the actual owner of the equipment.
     // Includes an exists() check to prevent errors on non-existent documents.
     function isCorrectEquipmentOwner(bookingData) {
@@ -58,8 +50,11 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // READ/LIST: User must be in the 'participants' array.
-      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // READ
+      allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow list: if isSignedIn() && request.auth.uid == request.query.where.beneficiary;
+      allow list: if isSignedIn() && request.auth.uid == request.query.where.ownerId;
+
       
       // CREATE: Strict validation for new bookings.
       allow create: if isSignedIn()
