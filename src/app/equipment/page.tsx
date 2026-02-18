@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { EquipmentCard } from "@/components/agri/equipment-card";
 import { VoiceSearch } from "@/components/agri/voice-search";
 import type { Equipment } from "@/lib/data";
@@ -14,7 +14,43 @@ import { Search } from "lucide-react";
 
 const equipmentTypes = ["Tractor", "Rotavator", "Plow", "Harvester", "Sprayer", "General Farm Equipment"];
 
+const EquipmentPageSkeleton = () => (
+    <div className="space-y-6">
+      <div className="space-y-4 p-4 bg-card rounded-lg border">
+        <Skeleton className="h-10 w-full" />
+        <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-16" />
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({length: 8}).map((_, i) => (
+             <CardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+);
+
+
+const CardSkeleton = () => (
+    <div className="space-y-4">
+        <Skeleton className="h-48 w-full" />
+        <div className="space-y-2 p-2">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-10 w-full" />
+        </div>
+    </div>
+);
+
 export default function EquipmentPage() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const firestore = useFirestore();
   const { user } = useUser();
   const equipmentColRef = useMemoFirebase(() => {
@@ -65,6 +101,10 @@ export default function EquipmentPage() {
   };
 
   const isFiltering = !!searchQuery || !!selectedType;
+
+  if (!isMounted) {
+    return <EquipmentPageSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -120,15 +160,3 @@ export default function EquipmentPage() {
     </div>
   );
 }
-
-
-const CardSkeleton = () => (
-    <div className="space-y-4">
-        <Skeleton className="h-48 w-full" />
-        <div className="space-y-2 p-2">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-10 w-full" />
-        </div>
-    </div>
-)
