@@ -1,6 +1,8 @@
+import Image from 'next/image';
+
 export function Logo() {
   return (
-    <img
+    <Image
       src="https://image2url.com/r2/default/images/1771447763339-21075360-936b-4d04-b2a4-eee74cf04e84.png"
       alt="Agri Saadhan Logo"
       width="400"
@@ -10,6 +12,7 @@ export function Logo() {
         height: 'auto',
         maxWidth: '100%',
       }}
+      priority
     />
   );
 }

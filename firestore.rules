@@ -59,7 +59,6 @@ service cloud.firestore {
     // BOOKINGS
     match /bookings/{bookingId} {
       // READ/LIST: User must be in the 'participants' array.
-      // This single rule now covers both get and list operations securely.
       allow get, list: if isSignedIn() && request.auth.uid in resource.data.participants;
       
       // CREATE: Strict validation for new bookings.
@@ -70,10 +69,9 @@ service cloud.firestore {
                       && request.resource.data.status == 'pending'
                       // 3. The booking data must correctly reference the equipment's true owner.
                       && isCorrectEquipmentOwner(request.resource.data)
-                      // 4. The participants array must be correctly formed.
-                      && hasValidParticipants(request.resource.data)
-                      // 5. The booking is either for the creator OR created by a verified agent.
-                      && (request.resource.data.beneficiary == request.auth.uid ? true : isVerifiedSahayak(request.auth.uid));
+                      // 4. The participants array must be correctly formed and include the creator.
+                      && hasValidParticipants(request.resource.data);
+
 
       // UPDATE: Different actors have different update permissions.
       
