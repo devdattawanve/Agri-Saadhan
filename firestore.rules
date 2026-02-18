@@ -20,8 +20,8 @@ service cloud.firestore {
     match /users/{userId} {
       // Any authenticated user can create their own profile.
       allow create: if isSignedIn() && request.auth.uid == userId;
-      // Users can read their own profile. Verified Sahayaks can read any profile.
-      allow get: if isOwner(userId) || isVerifiedSahayak(request.auth.uid);
+      // Any authenticated user can read user profiles to see owner details etc.
+      allow get: if isSignedIn();
       // Users can update their own profile.
       allow update: if isOwner(userId);
       // Users can delete their own profile.
