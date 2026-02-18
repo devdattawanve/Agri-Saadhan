@@ -16,39 +16,48 @@ import {FirestorePermissionError} from '@/firebase/errors';
  * Initiates a setDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
-  setDoc(docRef, data, options).catch(error => {
+export async function setDocumentNonBlocking(docRef: DocumentReference, data: any, options?: SetOptions) {
+  try {
+    if (options) {
+      await setDoc(docRef, data, options);
+    } else {
+      await setDoc(docRef, data);
+    }
+  } catch (error) {
     errorEmitter.emit(
       'permission-error',
       new FirestorePermissionError({
         path: docRef.path,
-        operation: 'write', // or 'create'/'update' based on options
+        operation: options && 'merge' in options ? 'update' : 'create',
         requestResourceData: data,
       })
-    )
-  })
-  // Execution continues immediately
+    );
+    // Re-throw the original error if you want callers to be able to catch it too
+    throw error;
+  }
 }
 
 
 /**
  * Initiates an addDoc operation for a collection reference.
- * Does NOT await the write operation internally.
- * Returns the Promise for the new doc ref, but typically not awaited by caller.
+ * It now returns the created DocumentReference on success.
  */
-export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
-  const promise = addDoc(colRef, data)
-    .catch(error => {
-      errorEmitter.emit(
-        'permission-error',
-        new FirestorePermissionError({
-          path: colRef.path,
-          operation: 'create',
-          requestResourceData: data,
-        })
-      )
-    });
-  return promise;
+export async function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
+  try {
+    const docRef = await addDoc(colRef, data);
+    return docRef;
+  } catch (error) {
+    errorEmitter.emit(
+      'permission-error',
+      new FirestorePermissionError({
+        path: colRef.path,
+        operation: 'create',
+        requestResourceData: data,
+      })
+    );
+    // Re-throw the original error if you want callers to be able to catch it too
+    throw error;
+  }
 }
 
 

@@ -44,20 +44,19 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start loading by default
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
     if (!memoizedDocRef) {
       setData(null);
-      setIsLoading(false);
+      setIsLoading(false); // Not loading if no ref is provided
       setError(null);
       return;
     }
 
-    setIsLoading(true);
+    setIsLoading(true); // Ensure loading is true when we have a ref
     setError(null);
-    // Optional: setData(null); // Clear previous data instantly
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
@@ -68,8 +67,8 @@ export function useDoc<T = any>(
           // Document does not exist
           setData(null);
         }
-        setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
-        setIsLoading(false);
+        setError(null); // Clear any previous error on successful snapshot
+        setIsLoading(false); // Data loaded, loading is complete
       },
       (error: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
@@ -79,7 +78,7 @@ export function useDoc<T = any>(
 
         setError(contextualError)
         setData(null)
-        setIsLoading(false)
+        setIsLoading(false) // Error occurred, loading is complete
 
         // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);

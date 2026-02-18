@@ -58,21 +58,20 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start loading by default
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
     if (!memoizedTargetRefOrQuery) {
       setData(null);
-      setIsLoading(false);
+      setIsLoading(false); // Not loading if no query is provided
       setError(null);
       return;
     }
 
-    setIsLoading(true);
+    setIsLoading(true); // Ensure loading is true when a query is provided
     setError(null);
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -82,7 +81,7 @@ export function useCollection<T = any>(
         }
         setData(results);
         setError(null);
-        setIsLoading(false);
+        setIsLoading(false); // Data fetched, loading is complete
       },
       (error: FirestoreError) => {
         // This logic extracts the path from either a ref or a query
@@ -98,7 +97,7 @@ export function useCollection<T = any>(
 
         setError(contextualError)
         setData(null)
-        setIsLoading(false)
+        setIsLoading(false) // Error occurred, loading is complete
 
         // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
@@ -107,8 +106,9 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+    throw new Error('A firestore query was not properly memoized using useMemoFirebase');
   }
   return { data, isLoading, error };
 }

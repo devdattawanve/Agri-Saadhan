@@ -1,10 +1,10 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { notFound, useRouter, useSearchParams, useParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, User, Truck, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, User, Truck, Calendar as CalendarIcon, Tractor } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,7 @@ import { format, differenceInHours, startOfDay } from 'date-fns';
 import { DateRange } from "react-day-picker";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 export default function BookingPage() {
     const params = useParams();
@@ -112,12 +113,10 @@ export default function BookingPage() {
 
         try {
             const bookingsColRef = collection(firestore, 'bookings');
-            const newDocRef = await addDocumentNonBlocking(bookingsColRef, bookingData);
+            const newDocRef = doc(bookingsColRef); // Create a new doc with a generated ID
             
-            if (newDocRef?.id) {
-                const finalDocRef = doc(firestore, 'bookings', newDocRef.id);
-                await setDocumentNonBlocking(finalDocRef, { id: newDocRef.id }, { merge: true });
-            }
+            // Set the booking data, including the generated ID
+            await setDocumentNonBlocking(newDocRef, { ...bookingData, id: newDocRef.id }, { merge: true });
             
             toast({
                 title: "Booking Requested!",
@@ -142,7 +141,16 @@ export default function BookingPage() {
     }
 
     if (!equipment) {
-        notFound();
+        return (
+            <div className="container mx-auto py-8 max-w-4xl text-center">
+                <Tractor className="h-24 w-24 mx-auto text-muted-foreground" />
+                <h1 className="mt-4 text-3xl font-bold font-headline">Equipment Not Found</h1>
+                <p className="text-muted-foreground">The equipment you are trying to book does not exist or has been removed.</p>
+                <Button asChild className="mt-6">
+                    <Link href="/equipment">Back to Marketplace</Link>
+                </Button>
+            </div>
+        );
     }
 
     return (
@@ -161,6 +169,13 @@ export default function BookingPage() {
                                 <CardDescription className="mt-2 text-sm">
                                     {equipment.description || 'No description provided.'}
                                 </CardDescription>
+                                <div className="mt-4 space-y-2">
+                                    <h4 className="font-semibold">Pricing</h4>
+                                    {equipment.price.perHour && <p className="text-sm text-muted-foreground">Per Hour: ₹{equipment.price.perHour}</p>}
+                                    {equipment.price.perDay && <p className="text-sm text-muted-foreground">Per Day: ₹{equipment.price.perDay}</p>}
+                                    {equipment.driverChargePerHour && <p className="text-sm text-muted-foreground">Driver Charge: ₹{equipment.driverChargePerHour}/hr</p>}
+                                    {equipment.deliveryFee && <p className="text-sm text-muted-foreground">Delivery Fee: ₹{equipment.deliveryFee} (flat)</p>}
+                                </div>
                             </div>
                         </div>
                     </Card>
