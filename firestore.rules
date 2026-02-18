@@ -43,12 +43,12 @@ service cloud.firestore {
 
     // BOOKINGS
     match /bookings/{bookingId} {
-      // A user can get a specific document if they are a participant.
+      // A user can GET a specific document if they are a participant.
       allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
-      
-      // A user can list bookings. Client-side queries MUST be constrained to ensure
-      // they only request documents they have permission to read. This rule allows the
-      // query to proceed, and the 'get' rule is checked on the result set.
+
+      // A user can LIST bookings if they are signed in.
+      // The client-side query MUST be constrained with a `where` clause to ensure
+      // they only request documents they have permission to see (which is enforced by the `get` rule).
       allow list: if isSignedIn();
       
       allow create: if isSignedIn()
