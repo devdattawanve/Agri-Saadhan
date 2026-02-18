@@ -12,8 +12,11 @@ service cloud.firestore {
     }
 
     // A Sahayak is a user with their sahayakStatus field set to 'VERIFIED'
+    // It safely checks for the existence of the user document first.
     function isVerifiedSahayak(userId) {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(userId)) && 
+             get(/databases/$(database)/documents/users/$(userId)).data.sahayakStatus == 'VERIFIED';
     }
 
     // Rules for the 'users' collection
