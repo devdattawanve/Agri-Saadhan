@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Loader2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
+import { MapPin, Loader2, LinkIcon } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const equipmentTypes = ["Tractor", "Rotavator", "Plow", "Harvester", "Sprayer", "General Farm Equipment"];
@@ -145,27 +145,14 @@ export default function AddEquipmentPage() {
                 </div>
                 
                 <div className="space-y-2">
-                    <Label>Equipment Image</Label>
-                    <div className="space-y-2">
-                        <div className="flex gap-2">
-                            <LinkIcon className="h-10 text-muted-foreground"/>
-                            <Input id="imageUrl" type="url" placeholder="Paste image URL here" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-                        </div>
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">
-                                or
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                             <ImageIcon className="h-10 text-muted-foreground"/>
-                             <Input id="imageFile" type="file" className="text-muted-foreground" />
-                        </div>
+                    <Label htmlFor="imageUrl">Equipment Image URL</Label>
+                    <div className="flex gap-2">
+                        <LinkIcon className="h-10 text-muted-foreground pt-2"/>
+                        <Input id="imageUrl" type="url" placeholder="https://... Paste image URL here" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
                     </div>
+                    <p className="text-xs text-muted-foreground px-2">
+                        Provide a direct link to an image of your equipment. Device upload is not yet supported.
+                    </p>
                 </div>
 
                 <div className="space-y-2">
