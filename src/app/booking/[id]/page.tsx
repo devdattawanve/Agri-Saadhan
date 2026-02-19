@@ -70,10 +70,10 @@ export default function BookingPage() {
         }
         setLoading(true);
 
-        const creator = user.uid;
-        const farmer = isSahayakBooking && beneficiaryId ? beneficiaryId : user.uid;
-        const owner = equipment.ownerId;
-        const participants = [...new Set([owner, creator, farmer])];
+        const creatorId = user.uid;
+        const farmerId = isSahayakBooking && beneficiaryId ? beneficiaryId : user.uid;
+        const ownerId = equipment.ownerId;
+        const participants = [...new Set([ownerId, creatorId, farmerId])];
 
         let bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any };
         
@@ -82,7 +82,7 @@ export default function BookingPage() {
             const endDate = addHours(startDate, hourlyDuration);
             bookingData = {
                 equipmentId: id, equipmentName: equipment.name, equipmentImageUrl: equipment.imageUrl, ownerId: equipment.ownerId,
-                farmerId: farmer, createdBy: creator, participants, status: 'pending', bookingType: 'hourly',
+                farmerId: farmerId, createdBy: creatorId, participants, status: 'pending', bookingType: 'hourly',
                 startDate, endDate, duration: hourlyDuration, totalPrice,
                 createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
             };
@@ -90,7 +90,7 @@ export default function BookingPage() {
             const durationInDays = differenceInCalendarDays(dailyDate.to, dailyDate.from) + 1;
             bookingData = {
                 equipmentId: id, equipmentName: equipment.name, equipmentImageUrl: equipment.imageUrl, ownerId: equipment.ownerId,
-                farmerId: farmer, createdBy: creator, participants, status: 'pending', bookingType: 'daily',
+                farmerId: farmerId, createdBy: creatorId, participants, status: 'pending', bookingType: 'daily',
                 startDate: startOfDay(dailyDate.from), endDate: endOfDay(dailyDate.to), duration: durationInDays, totalPrice,
                 createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
             };
@@ -106,8 +106,7 @@ export default function BookingPage() {
             toast({ title: "Booking Request Sent", description: "The owner has been notified." });
             router.push('/my-bookings');
         } catch (error: any) {
-            console.error("Booking failed:", error);
-            toast({ variant: "destructive", title: "Booking Failed", description: error.message || "There was a problem with your booking request." });
+            // Error is handled globally by FirebaseErrorListener, no need to toast here.
         } finally {
             setLoading(false);
         }
@@ -219,3 +218,4 @@ export default function BookingPage() {
         </div>
     );
 }
+    

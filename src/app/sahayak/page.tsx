@@ -48,7 +48,7 @@ export default function SahayakPage() {
                                             <p className="text-sm text-muted-foreground">{farmer.villageTehsil} - {farmer.contactPhoneNumber}</p>
                                         </div>
                                         <Button asChild>
-                                            <Link href={`/dashboard?beneficiaryId=${farmer.id}`}>
+                                            <Link href={`/equipment?beneficiaryId=${farmer.id}`}>
                                                 Book for this Farmer
                                             </Link>
                                         </Button>
@@ -81,3 +81,5 @@ export default function SahayakPage() {
         </div>
     );
 }
+
+    
