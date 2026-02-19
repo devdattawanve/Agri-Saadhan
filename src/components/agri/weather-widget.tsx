@@ -98,7 +98,11 @@ export function WeatherWidget() {
                 <CardTitle className="font-headline text-lg">
                     {loading ? <Skeleton className="h-6 w-32" /> : `Weather in ${weather?.locationName || 'your area'}`}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">{date || <Skeleton className="h-4 w-40" />}</p>
+                {date ? (
+                    <p className="text-sm text-muted-foreground">{date}</p>
+                ) : (
+                    <Skeleton className="h-4 w-40 mt-1" />
+                )}
             </CardHeader>
             <CardContent className="flex items-center justify-around">
                 {loading ? (
