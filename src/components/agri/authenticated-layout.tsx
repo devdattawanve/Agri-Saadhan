@@ -2,6 +2,7 @@
 
 import { AppHeader } from "@/components/agri/app-header";
 import { AppSidebar } from "@/components/agri/app-sidebar";
+import { BottomNav } from "@/components/agri/bottom-nav";
 import { Sidebar, SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -29,9 +30,10 @@ export function AuthenticatedLayout({
         <SidebarInset>
             <div className="flex flex-col min-h-screen">
                 <AppHeader />
-                <main className="flex-1 p-4 md:p-8 bg-muted/40">
+                <main className="flex-1 p-4 md:p-8 bg-muted/40 pb-20 md:pb-8">
                     {children}
                 </main>
+                <BottomNav userData={userData} />
             </div>
         </SidebarInset>
     </SidebarProvider>
