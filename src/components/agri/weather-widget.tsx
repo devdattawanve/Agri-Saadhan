@@ -94,44 +94,44 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
     }, [userData]);
 
     return (
-        <Card className={cn(cardClassName)}>
+        <Card className={cn("text-white", cardClassName)}>
             <CardHeader>
-                <CardTitle className="font-headline text-lg text-white">
-                    {loading ? <Skeleton className="h-6 w-32 bg-white/20" /> : `Weather in ${weather?.locationName || 'your area'}`}
+                <CardTitle className="font-headline text-lg">
+                    {loading ? <Skeleton className="h-6 w-32 bg-current opacity-20" /> : `Weather in ${weather?.locationName || 'your area'}`}
                 </CardTitle>
                 {date ? (
-                    <p className="text-sm text-gray-200">{date}</p>
+                    <p className="text-sm opacity-90">{date}</p>
                 ) : (
-                    <Skeleton className="h-4 w-40 mt-1 bg-white/20" />
+                    <Skeleton className="h-4 w-40 mt-1 bg-current opacity-20" />
                 )}
             </CardHeader>
-            <CardContent className="flex items-center justify-around text-white">
+            <CardContent className="flex items-center justify-around">
                 {loading ? (
                     <>
-                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-white/20" /><Skeleton className="h-6 w-10 bg-white/20" /><Skeleton className="h-4 w-12 bg-white/20" /></div>
-                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-white/20" /><Skeleton className="h-6 w-10 bg-white/20" /><Skeleton className="h-4 w-16 bg-white/20" /></div>
-                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-white/20" /><Skeleton className="h-6 w-10 bg-white/20" /><Skeleton className="h-4 w-8 bg-white/20" /></div>
+                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-current opacity-20" /><Skeleton className="h-6 w-10 bg-current opacity-20" /><Skeleton className="h-4 w-12 bg-current opacity-20" /></div>
+                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-current opacity-20" /><Skeleton className="h-6 w-10 bg-current opacity-20" /><Skeleton className="h-4 w-16 bg-current opacity-20" /></div>
+                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-current opacity-20" /><Skeleton className="h-6 w-10 bg-current opacity-20" /><Skeleton className="h-4 w-8 bg-current opacity-20" /></div>
                     </>
                 ) : weather ? (
                     <>
                         <div className="flex flex-col items-center gap-2">
                             {weather.description === 'Sunny' ? <Sun className="h-10 w-10 text-yellow-400" /> : <CloudRain className="h-10 w-10 text-blue-300" /> }
                             <p className="font-bold text-xl">{weather.temp}°C</p>
-                            <p className="text-sm text-gray-300">{weather.description}</p>
+                            <p className="text-sm opacity-90">{weather.description}</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <Thermometer className="h-10 w-10 text-red-400" />
                             <p className="font-bold text-xl">{weather.maxTemp}°C</p>
-                            <p className="text-sm text-gray-300">Max Temp</p>
+                            <p className="text-sm opacity-90">Max Temp</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <CloudRain className="h-10 w-10 text-blue-400" />
                             <p className="font-bold text-xl">{weather.rainChance}%</p>
-                            <p className="text-sm text-gray-300">Rain</p>
+                            <p className="text-sm opacity-90">Rain</p>
                         </div>
                     </>
                 ) : (
-                    <div className="flex flex-col items-center gap-2 text-center text-muted-foreground py-4">
+                    <div className="flex flex-col items-center gap-2 text-center py-4">
                         <MapPin className="h-8 w-8" />
                         <p>Could not fetch weather.</p>
                         <p className="text-xs">Please set your location in your <Link href="/profile" className="underline text-primary">profile</Link>.</p>

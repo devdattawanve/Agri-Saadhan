@@ -23,8 +23,8 @@ export default function DashboardPage() {
         }}
       />
       <div className="relative z-10 p-4 pb-20 md:p-8 space-y-8">
-        <WeatherWidget cardClassName="bg-card/80 backdrop-blur-sm" />
-        <Card className="bg-card/80 backdrop-blur-sm">
+        <WeatherWidget cardClassName="bg-black/40 backdrop-blur-sm border-white/10" />
+        <Card className="bg-black/40 backdrop-blur-sm border-white/10">
           <CardHeader>
             <CardTitle className="font-headline text-3xl text-white">
               Welcome to Agri Saadhan
