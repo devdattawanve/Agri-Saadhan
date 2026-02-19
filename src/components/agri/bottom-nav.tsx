@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Tractor, Book, Warehouse, ClipboardList } from "lucide-react";
+import { Home, Tractor, CalendarCheck, Wrench, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the user data type inline to avoid complex imports
@@ -34,8 +34,8 @@ export function BottomNav({ userData }: { userData?: AppUserData | null }) {
     const navItems = [
         { href: "/dashboard", icon: Home, label: "Home", show: true },
         { href: "/equipment", icon: Tractor, label: "Equipment", show: true },
-        { href: "/my-bookings", icon: Book, label: "My Bookings", show: isFarmer },
-        { href: "/my-equipment", icon: Warehouse, label: "My Equipment", show: isOwner },
+        { href: "/my-bookings", icon: CalendarCheck, label: "My Bookings", show: isFarmer },
+        { href: "/my-equipment", icon: Wrench, label: "My Equipment", show: isOwner },
         { href: "/owner-bookings", icon: ClipboardList, label: "Bookings", show: isOwner },
     ].filter(item => item.show);
 
