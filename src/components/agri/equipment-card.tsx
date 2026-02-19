@@ -25,11 +25,15 @@ export function EquipmentCard({ equipment, isOwner }: { equipment: Equipment; is
   const detailLinkHref = `/equipment/${equipment.id}${beneficiaryId ? `?beneficiaryId=${beneficiaryId}`: ''}`;
 
   const getDisplayPrice = () => {
-    if (equipment.pricePerHour) {
-      return { amount: equipment.pricePerHour, unit: 'hour' };
+    const eq = equipment as any;
+    if (eq.pricePerHour) {
+      return { amount: eq.pricePerHour, unit: 'hour' };
     }
-    if (equipment.pricePerDay) {
-      return { amount: equipment.pricePerDay, unit: 'day' };
+    if (eq.pricePerDay) {
+      return { amount: eq.pricePerDay, unit: 'day' };
+    }
+    if (eq.price && eq.price.amount && eq.price.unit) {
+      return { amount: eq.price.amount, unit: eq.price.unit };
     }
     return null;
   };

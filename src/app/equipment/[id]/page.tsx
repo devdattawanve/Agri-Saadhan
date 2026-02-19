@@ -70,6 +70,10 @@ export default function EquipmentDetailPage() {
     : `/booking/${equipment.id}`;
 
   const availabilityColor = equipment.availabilityStatus === 'available' ? 'bg-green-500' : 'bg-yellow-500';
+  
+  const eq = equipment as any;
+  const pricePerHour = eq.pricePerHour ?? (eq.price?.unit === 'hour' ? eq.price.amount : null);
+  const pricePerDay = eq.pricePerDay ?? (eq.price?.unit === 'day' ? eq.price.amount : null);
 
   return (
     <div className="container mx-auto py-8">
@@ -128,20 +132,20 @@ export default function EquipmentDetailPage() {
                     <div>
                         <h3 className="font-semibold font-headline mb-4 flex items-center gap-2"><IndianRupee className="h-5 w-5 text-primary" />Pricing</h3>
                         <div className="space-y-2">
-                            {equipment.pricePerHour && (
+                            {pricePerHour && (
                                 <div className="flex justify-between items-baseline text-sm">
                                   <span className="text-muted-foreground">Per Hour</span>
-                                  <p className="font-semibold">₹{equipment.pricePerHour}</p>
+                                  <p className="font-semibold">₹{pricePerHour}</p>
                                 </div>
                             )}
-                            {equipment.pricePerDay && (
+                            {pricePerDay && (
                                 <div className="flex justify-between items-baseline text-sm">
                                   <span className="text-muted-foreground">Per Day</span>
-                                  <p className="font-semibold">₹{equipment.pricePerDay}</p>
+                                  <p className="font-semibold">₹{pricePerDay}</p>
                                 </div>
                             )}
                          </div>
-                         {!equipment.pricePerHour && !equipment.pricePerDay && (
+                         {!pricePerHour && !pricePerDay && (
                              <p className="text-muted-foreground text-sm">Price available on request.</p>
                          )}
                     </div>
