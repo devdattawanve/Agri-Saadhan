@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
@@ -24,12 +24,26 @@ export function BookingCard({ booking }: { booking: Booking }) {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
 
+    useEffect(() => {
+        if (firestore && (booking.status === 'accepted' || booking.status === 'rejected') && !booking.statusChangeAcknowledged) {
+            toast({
+                title: `Booking ${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}`,
+                description: `Your booking for "${booking.equipmentName}" has been ${booking.status}.`,
+                variant: booking.status === 'rejected' ? 'destructive' : 'default',
+                duration: 10000,
+            });
+
+            const bookingRef = doc(firestore, 'bookings', booking.id);
+            setDocumentNonBlocking(bookingRef, { statusChangeAcknowledged: true }, { merge: true });
+        }
+    }, [booking.status, booking.statusChangeAcknowledged, booking.id, booking.equipmentName, firestore, toast]);
+
     const handleCancelBooking = async () => {
         if (!firestore) return;
         setIsCancelling(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            await setDocumentNonBlocking(bookingRef, { status: 'cancelled' }, { merge: true });
+            await setDocumentNonBlocking(bookingRef, { status: 'cancelled', updatedAt: new Date(), statusChangeAcknowledged: false }, { merge: true });
             toast({
                 title: "Booking Cancelled",
                 description: "Your booking request has been successfully cancelled.",
@@ -55,10 +69,10 @@ export function BookingCard({ booking }: { booking: Booking }) {
                         <div>
                             <h3 className="font-semibold text-lg">{booking.equipmentName || 'Equipment'}</h3>
                              <p className="text-sm text-muted-foreground">
-                                Booked from {booking.startDate?.toDate ? format(booking.startDate.toDate(), 'PPP p') : ''}
+                                Booked from {booking.startDate?.toDate ? format(booking.startDate.toDate(), 'PP p') : ''}
                             </p>
                              <p className="text-sm text-muted-foreground">
-                                to {booking.endDate?.toDate ? format(booking.endDate.toDate(), 'PPP p') : ''}
+                                to {booking.endDate?.toDate ? format(booking.endDate.toDate(), 'PP p') : ''}
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-2 text-right">

@@ -1,14 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, serverTimestamp } from "firebase/firestore";
 import type { Booking } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X, Loader2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Check, X, Loader2, Phone, MapPin, Calendar, Clock, User as UserIcon } from "lucide-react";
 import { format } from 'date-fns';
+
+function FarmerDetails({ farmerId }: { farmerId: string }) {
+    const firestore = useFirestore();
+    const farmerDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'users', farmerId) : null, [firestore, farmerId]);
+    const { data: farmer, isLoading } = useDoc(farmerDocRef);
+
+    if (isLoading) {
+        return <div className="text-sm text-muted-foreground">Loading farmer details...</div>;
+    }
+    if (!farmer) {
+        return <div className="text-sm text-destructive">Farmer details not found.</div>;
+    }
+
+    return (
+        <div className="space-y-2 mt-2 pt-4 border-t">
+            <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                    <AvatarImage src={farmer.profilePictureUrl || undefined} />
+                    <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
+                </Avatar>
+                <span className="font-semibold text-base">{farmer.name}</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <Phone className="h-4 w-4 flex-shrink-0" />
+                <span>{farmer.contactPhoneNumber}</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span>{farmer.villageTehsil}</span>
+            </div>
+        </div>
+    );
+}
+
 
 export function OwnerBookingCard({ booking }: { booking: Booking }) {
     const firestore = useFirestore();
@@ -20,7 +56,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
         setIsUpdating(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            await setDocumentNonBlocking(bookingRef, { status, updatedAt: serverTimestamp() }, { merge: true });
+            await setDocumentNonBlocking(bookingRef, { status, updatedAt: serverTimestamp(), statusChangeAcknowledged: false }, { merge: true });
             toast({
                 title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
                 description: `The booking request has been ${status}.`,
@@ -31,38 +67,51 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
                 title: "Update Failed",
                 description: error.message || "There was an error updating the booking status.",
             });
-            setIsUpdating(false); 
+        } finally {
+            // Do not set isUpdating to false here, the component will unmount on success
         }
     };
 
     return (
         <Card>
-            <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <p className="font-semibold">Request for <span className="font-mono text-sm">{booking.equipmentName}</span></p>
-                    <p className="text-sm text-muted-foreground">
-                        From Farmer: <span className="font-mono text-sm">{booking.farmerId.substring(0, 7)}...</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Dates: {booking.startDate?.toDate ? format(booking.startDate.toDate(), 'PPp') : ''} - {booking.endDate?.toDate ? format(booking.endDate.toDate(), 'PPp') : ''}
-                    </p>
-                </div>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <p className="font-bold text-lg whitespace-nowrap">Rs. {booking.totalPrice.toFixed(2)}</p>
-                    <div className="flex gap-2 ml-auto">
-                        {isUpdating ? (
-                            <Button size="icon" disabled>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            </Button>
-                        ) : (
-                            <>
-                                <Button aria-label="Accept" size="icon" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleUpdateStatus('accepted')}><Check /></Button>
-                                <Button aria-label="Reject" size="icon" variant="outline" className="text-red-600 border-red-600 hover:bg-red-100 hover:text-red-700" onClick={() => handleUpdateStatus('rejected')}><X /></Button>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </CardContent>
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value={booking.id} className="border-b-0">
+                    <CardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex-grow">
+                                <p className="font-semibold">Request for <span className="font-bold">{booking.equipmentName}</span></p>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>{format(booking.startDate.toDate(), 'PP')}</span>
+                                </div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                     <Clock className="h-4 w-4" />
+                                     <span>{booking.duration} {booking.bookingType === 'daily' ? 'day(s)' : 'hour(s)'}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <p className="font-bold text-lg whitespace-nowrap">Rs. {booking.totalPrice.toFixed(2)}</p>
+                                <AccordionTrigger className="p-2 ml-auto sm:ml-2 hover:no-underline rounded-md hover:bg-muted" />
+                                <div className="flex gap-2">
+                                    {isUpdating ? (
+                                        <Button size="icon" disabled>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            <Button aria-label="Accept" size="icon" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700 h-9 w-9" onClick={() => handleUpdateStatus('accepted')}><Check className="h-5 w-5"/></Button>
+                                            <Button aria-label="Reject" size="icon" variant="outline" className="text-red-600 border-red-600 hover:bg-red-100 hover:text-red-700 h-9 w-9" onClick={() => handleUpdateStatus('rejected')}><X className="h-5 w-5"/></Button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                    <AccordionContent className="px-4 pb-4">
+                        <FarmerDetails farmerId={booking.farmerId} />
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </Card>
     )
 }

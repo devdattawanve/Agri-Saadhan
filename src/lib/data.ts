@@ -36,6 +36,7 @@ export interface Booking {
     totalPrice: number;
 
     status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+    statusChangeAcknowledged?: boolean;
 
     createdAt: Timestamp;
     updatedAt: Timestamp;

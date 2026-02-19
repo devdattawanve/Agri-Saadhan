@@ -93,6 +93,7 @@ export default function BookingPage() {
                 equipmentId: id, equipmentName: equipment.name, equipmentImageUrl: equipment.imageUrl, ownerId: equipment.ownerId,
                 farmerId: farmerId, createdBy: creatorId, participants, status: 'pending', bookingType: 'hourly',
                 startDate, endDate, duration: hourlyDuration, totalPrice,
+                statusChangeAcknowledged: true, // Farmer is aware of the initial 'pending' status
                 createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
             };
         } else if (bookingType === 'daily' && dailyDate?.from && dailyDate?.to) {
@@ -102,6 +103,7 @@ export default function BookingPage() {
                 equipmentId: id, equipmentName: equipment.name, equipmentImageUrl: equipment.imageUrl, ownerId: equipment.ownerId,
                 farmerId: farmerId, createdBy: creatorId, participants, status: 'pending', bookingType: 'daily',
                 startDate: startOfDay(dailyDate.from), endDate: endOfDay(dailyDate.to), duration: durationInDays, totalPrice,
+                statusChangeAcknowledged: true, // Farmer is aware of the initial 'pending' status
                 createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
             };
         } else {
