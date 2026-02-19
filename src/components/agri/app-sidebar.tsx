@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Home, Warehouse, User as UserIcon, Tractor, Book, Briefcase } from "lucide-react";
+import { Users, Home, Warehouse, User as UserIcon, Tractor, Book, ClipboardList } from "lucide-react";
 
 // Define the user data type inline to avoid complex imports
 interface AppUserData {
@@ -68,7 +68,7 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
                         href="/owner-bookings"
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                     >
-                        <Briefcase className="h-4 w-4" />
+                        <ClipboardList className="h-4 w-4" />
                         Bookings
                     </Link>
                 </>
