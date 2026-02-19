@@ -6,6 +6,7 @@ import { doc } from "firebase/firestore";
 import { CloudRain, Sun, Thermometer, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from 'next/link';
+import { cn } from "@/lib/utils";
 
 interface WeatherData {
     temp: number;
@@ -15,7 +16,7 @@ interface WeatherData {
     locationName: string;
 }
 
-export function WeatherWidget() {
+export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const [date, setDate] = useState("");
@@ -93,40 +94,40 @@ export function WeatherWidget() {
     }, [userData]);
 
     return (
-        <Card>
+        <Card className={cn(cardClassName)}>
             <CardHeader>
-                <CardTitle className="font-headline text-lg">
-                    {loading ? <Skeleton className="h-6 w-32" /> : `Weather in ${weather?.locationName || 'your area'}`}
+                <CardTitle className="font-headline text-lg text-white">
+                    {loading ? <Skeleton className="h-6 w-32 bg-white/20" /> : `Weather in ${weather?.locationName || 'your area'}`}
                 </CardTitle>
                 {date ? (
-                    <p className="text-sm text-muted-foreground">{date}</p>
+                    <p className="text-sm text-gray-200">{date}</p>
                 ) : (
-                    <Skeleton className="h-4 w-40 mt-1" />
+                    <Skeleton className="h-4 w-40 mt-1 bg-white/20" />
                 )}
             </CardHeader>
-            <CardContent className="flex items-center justify-around">
+            <CardContent className="flex items-center justify-around text-white">
                 {loading ? (
                     <>
-                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-6 w-10" /><Skeleton className="h-4 w-12" /></div>
-                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-6 w-10" /><Skeleton className="h-4 w-16" /></div>
-                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-6 w-10" /><Skeleton className="h-4 w-8" /></div>
+                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-white/20" /><Skeleton className="h-6 w-10 bg-white/20" /><Skeleton className="h-4 w-12 bg-white/20" /></div>
+                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-white/20" /><Skeleton className="h-6 w-10 bg-white/20" /><Skeleton className="h-4 w-16 bg-white/20" /></div>
+                        <div className="flex flex-col items-center gap-2"><Skeleton className="h-10 w-10 rounded-full bg-white/20" /><Skeleton className="h-6 w-10 bg-white/20" /><Skeleton className="h-4 w-8 bg-white/20" /></div>
                     </>
                 ) : weather ? (
                     <>
                         <div className="flex flex-col items-center gap-2">
-                            {weather.description === 'Sunny' ? <Sun className="h-10 w-10 text-yellow-500" /> : <CloudRain className="h-10 w-10 text-blue-400" /> }
+                            {weather.description === 'Sunny' ? <Sun className="h-10 w-10 text-yellow-400" /> : <CloudRain className="h-10 w-10 text-blue-300" /> }
                             <p className="font-bold text-xl">{weather.temp}°C</p>
-                            <p className="text-sm text-muted-foreground">{weather.description}</p>
+                            <p className="text-sm text-gray-300">{weather.description}</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <Thermometer className="h-10 w-10 text-red-500" />
+                            <Thermometer className="h-10 w-10 text-red-400" />
                             <p className="font-bold text-xl">{weather.maxTemp}°C</p>
-                            <p className="text-sm text-muted-foreground">Max Temp</p>
+                            <p className="text-sm text-gray-300">Max Temp</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <CloudRain className="h-10 w-10 text-blue-500" />
+                            <CloudRain className="h-10 w-10 text-blue-400" />
                             <p className="font-bold text-xl">{weather.rainChance}%</p>
-                            <p className="text-sm text-muted-foreground">Rain</p>
+                            <p className="text-sm text-gray-300">Rain</p>
                         </div>
                     </>
                 ) : (
