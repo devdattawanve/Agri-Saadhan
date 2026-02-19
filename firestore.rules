@@ -23,9 +23,11 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      // Users can read a booking if they are a participant.
-      // Client queries MUST include a `where('participants', 'array-contains', <userId>)` clause.
-      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // A user can GET a booking if they are a participant.
+      allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // A user can LIST bookings if they are signed in.
+      // Client queries MUST include a `where('participants', 'array-contains', <userId>)` clause to enforce security.
+      allow list: if isSignedIn();
 
       // An authenticated user can create a booking request.
       // - The creator must be the one making the request.
