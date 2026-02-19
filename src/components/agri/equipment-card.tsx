@@ -24,14 +24,12 @@ export function EquipmentCard({ equipment, isOwner }: { equipment: Equipment; is
 
   const detailLinkHref = `/equipment/${equipment.id}${beneficiaryId ? `?beneficiaryId=${beneficiaryId}`: ''}`;
 
-  const ownerName = equipment.owner || "Owner";
-
   const getDisplayPrice = () => {
-    if (equipment.price?.perHour) {
-      return { amount: equipment.price.perHour, unit: 'hour' };
+    if (equipment.pricePerHour) {
+      return { amount: equipment.pricePerHour, unit: 'hour' };
     }
-    if (equipment.price?.perDay) {
-      return { amount: equipment.price.perDay, unit: 'day' };
+    if (equipment.pricePerDay) {
+      return { amount: equipment.pricePerDay, unit: 'day' };
     }
     return null;
   };
@@ -61,7 +59,7 @@ export function EquipmentCard({ equipment, isOwner }: { equipment: Equipment; is
           <CardHeader>
             <CardTitle className="font-headline group-hover:text-primary transition-colors">{equipment.name}</CardTitle>
             <CardDescription>
-              By {ownerName} ({equipment.village})
+              In {equipment.village}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 mt-auto">
@@ -74,14 +72,7 @@ export function EquipmentCard({ equipment, isOwner }: { equipment: Equipment; is
               ) : (
                 <span className="text-sm text-muted-foreground">Price not set</span>
               )}
-              {equipment.travelTime && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>~{equipment.travelTime} mins away</span>
-                </Badge>
-              )}
             </div>
-            {equipment.distance && <p className="text-sm">{equipment.distance} km from your location</p>}
           </CardContent>
         </Link>
       </div>

@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useUser, useFirestore, addDocumentNonBlocking } from "@/firebase";
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
 import { collection, serverTimestamp } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,54 +19,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const equipmentTypes = ["Tractor", "Rotavator", "Plow", "Harvester", "Sprayer", "General Farm Equipment"];
 
-const AddEquipmentPageSkeleton = () => (
-    <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-4 w-3/4 mt-2" />
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-20 w-full" />
-            </div>
-            
-            <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-40 w-full" />
-            </div>
-
-            <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-10 w-full" />
-            </div>
-
-            <div className="space-y-2">
-                 <Skeleton className="h-4 w-32" />
-                 <Skeleton className="h-10 w-full" />
-            </div>
-            
-             <div className="space-y-2">
-                 <Skeleton className="h-4 w-32" />
-                 <Skeleton className="h-10 w-full" />
-            </div>
-
-            <Skeleton className="h-12 w-full mt-4" />
-        </CardContent>
-    </Card>
-);
-
 export default function AddEquipmentPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -80,8 +31,6 @@ export default function AddEquipmentPage() {
     const [village, setVillage] = useState("");
     const [pricePerHour, setPricePerHour] = useState("");
     const [pricePerDay, setPricePerDay] = useState("");
-    const [driverCharge, setDriverCharge] = useState("");
-    const [deliveryFee, setDeliveryFee] = useState("");
     
     const [imageUrl, setImageUrl] = useState("");
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -111,7 +60,7 @@ export default function AddEquipmentPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result as string);
-                setImageUrl(""); // Clear URL input if file is selected
+                setImageUrl(""); 
             };
             reader.readAsDataURL(file);
         }
@@ -119,90 +68,60 @@ export default function AddEquipmentPage() {
 
     const handleDetectLocation = () => {
         setDetectingLocation(true);
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setCoords({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    });
-                    toast({ title: "Location Detected!" });
-                    setDetectingLocation(false);
-                },
-                (error) => {
-                    toast({ variant: "destructive", title: "Location Error", description: "Could not get your location." });
-                    console.error("Geolocation error:", error);
-                    setDetectingLocation(false);
-                }
-            );
-        } else {
-            toast({ variant: "destructive", title: "Unsupported", description: "Geolocation is not supported by your browser." });
-            setDetectingLocation(false);
-        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+                toast({ title: "Location Detected!" });
+                setDetectingLocation(false);
+            },
+            (error) => {
+                toast({ variant: "destructive", title: "Location Error", description: "Could not get your location." });
+                setDetectingLocation(false);
+            }
+        );
     };
 
     const handleAddEquipment = async () => {
-        if (!user) {
-            toast({ variant: "destructive", title: "Not logged in", description: "You must be logged in to add equipment." });
-            return;
-        }
-        if (!name || !type || !village || (!pricePerHour && !pricePerDay)) {
+        if (!user || !name || !type || !village || (!pricePerHour && !pricePerDay)) {
             toast({ variant: "destructive", title: "Missing Fields", description: "Please fill out name, type, village, and at least one price." });
             return;
         }
 
         setLoading(true);
 
-        // TODO: In a real app, upload the imagePreview (if it's a data URI) to Firebase Storage and get a URL.
-        // For now, we'll just use the data URI directly or the imageUrl, which works but is inefficient for large images.
         const defaultImage = PlaceHolderImages.find(img => img.id.includes(type.toLowerCase())) || PlaceHolderImages[0];
         const finalImageUrl = imagePreview || imageUrl || defaultImage.imageUrl;
 
         try {
             const equipmentColRef = collection(firestore, "equipment");
-            await addDocumentNonBlocking(equipmentColRef, {
-                name,
-                type,
-                description,
-                village,
-                price: {
-                    perHour: pricePerHour ? Number(pricePerHour) : null,
-                    perDay: pricePerDay ? Number(pricePerDay) : null,
-                },
-                driverChargePerHour: driverCharge ? Number(driverCharge) : null,
-                deliveryFee: deliveryFee ? Number(deliveryFee) : null,
+            const newDocRef = await addDocumentNonBlocking(equipmentColRef, {
+                name, type, description, village,
+                pricePerHour: pricePerHour ? Number(pricePerHour) : null,
+                pricePerDay: pricePerDay ? Number(pricePerDay) : null,
                 ownerId: user.uid,
                 verified: false,
                 availabilityStatus: "available",
                 latitude: coords?.lat || null,
                 longitude: coords?.lng || null,
-                geohash: "tbd", // To be calculated on the backend or with a library
+                geohash: "tbd",
                 imageUrl: finalImageUrl,
-                imageHint: defaultImage.imageHint, // Fallback hint
+                imageHint: defaultImage.imageHint,
                 createdAt: serverTimestamp(),
             });
+            await setDocumentNonBlocking(newDocRef, { id: newDocRef.id }, { merge: true });
 
-            toast({
-                title: "Equipment Added!",
-                description: `${name} has been listed for rent.`,
-            });
+            toast({ title: "Equipment Added!", description: `${name} has been listed for rent.` });
             router.push("/my-equipment");
 
         } catch (error: any) {
             console.error("Error adding equipment:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.message || "Could not add equipment.",
-            });
+            toast({ variant: "destructive", title: "Error", description: error.message || "Could not add equipment." });
         } finally {
             setLoading(false);
         }
     };
 
-    if (!isMounted) {
-        return <AddEquipmentPageSkeleton />;
-    }
+    if (!isMounted) return <Skeleton className="w-full max-w-2xl mx-auto h-screen" />;
 
     return (
         <Card className="w-full max-w-2xl mx-auto">
@@ -219,66 +138,31 @@ export default function AddEquipmentPage() {
                     <div className="space-y-2">
                         <Label htmlFor="type">Equipment Type</Label>
                         <Select onValueChange={setType} value={type}>
-                            <SelectTrigger id="type">
-                                <SelectValue placeholder="Select a type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {equipmentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                            </SelectContent>
+                            <SelectTrigger id="type"><SelectValue placeholder="Select a type" /></SelectTrigger>
+                            <SelectContent>{equipmentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
-                    <Textarea id="description" placeholder="Describe the equipment, its condition, and any special features." value={description} onChange={(e) => setDescription(e.target.value)} />
+                    <Textarea id="description" placeholder="Describe the equipment, its condition, etc." value={description} onChange={(e) => setDescription(e.target.value)} />
                 </div>
                 
                 <div className="space-y-2">
                     <Label>Equipment Image</Label>
                     <Tabs defaultValue="upload" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="upload">Upload from Device</TabsTrigger>
-                            <TabsTrigger value="url">From URL</TabsTrigger>
-                        </TabsList>
+                        <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="upload">Upload</TabsTrigger><TabsTrigger value="url">From URL</TabsTrigger></TabsList>
                         <TabsContent value="upload">
-                            <div 
-                                className="mt-2 flex flex-col items-center justify-center space-y-2 border-2 border-dashed border-muted rounded-lg p-8 cursor-pointer hover:bg-muted/50 transition-colors"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    accept="image/png, image/jpeg, image/gif"
-                                    onChange={handleFileChange}
-                                />
-                                {imagePreview ? (
-                                    <div className="relative w-48 h-32">
-                                        <Image src={imagePreview} alt="Equipment preview" layout="fill" className="rounded-md object-cover" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <UploadCloud className="h-10 w-10 text-muted-foreground" />
-                                        <p className="text-center text-sm text-muted-foreground">Click to upload</p>
-                                        <p className="text-xs text-muted-foreground">(Max 1MB)</p>
-                                    </>
-                                )}
+                            <div className="mt-2 flex flex-col items-center justify-center space-y-2 border-2 border-dashed rounded-lg p-8 cursor-pointer hover:bg-muted/50" onClick={() => fileInputRef.current?.click()}>
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                                {imagePreview ? <Image src={imagePreview} alt="Preview" width={192} height={128} className="rounded-md object-cover" /> : <><UploadCloud className="h-10 w-10 text-muted-foreground" /><p className="text-sm text-muted-foreground">Click to upload (Max 1MB)</p></>}
                             </div>
                         </TabsContent>
                         <TabsContent value="url">
                             <div className="flex gap-2 items-center pt-2">
                                 <LinkIcon className="h-5 w-5 text-muted-foreground"/>
-                                <Input 
-                                    id="imageUrl" 
-                                    type="url" 
-                                    placeholder="https://... paste image link" 
-                                    value={imageUrl} 
-                                    onChange={(e) => {
-                                        setImageUrl(e.target.value);
-                                        setImagePreview(null);
-                                    }} 
-                                />
+                                <Input id="imageUrl" type="url" placeholder="https://... paste image link" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImagePreview(null); }} />
                             </div>
                         </TabsContent>
                     </Tabs>
@@ -286,51 +170,27 @@ export default function AddEquipmentPage() {
 
                 <div className="space-y-2">
                     <Label htmlFor="village">Village / Location</Label>
-                        <div className="flex gap-2">
+                    <div className="flex gap-2">
                         <Input id="village" placeholder="e.g. Ramgarh" value={village} onChange={(e) => setVillage(e.target.value)} />
                         <Button variant="outline" size="icon" onClick={handleDetectLocation} disabled={detectingLocation}>
                             {detectingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
                         </Button>
                     </div>
-                    {coords && <p className="text-xs text-green-600">Location captured successfully!</p>}
+                    {coords && <p className="text-xs text-green-600">Location captured!</p>}
                 </div>
 
                 <div>
-                    <Label>Base Rental Price</Label>
+                    <Label>Rental Price</Label>
                     <div className="grid md:grid-cols-2 gap-4 mt-2">
-                        <div className="relative">
-                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                           <Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-8" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} />
-                        </div>
-                        <div className="relative">
-                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                           <Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-8" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} />
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <Label>Additional Charges (Optional)</Label>
-                    <div className="grid md:grid-cols-2 gap-4 mt-2">
-                        <div className="relative">
-                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                           <Input id="driverCharge" type="number" placeholder="Driver charge / hour" className="pl-8" value={driverCharge} onChange={(e) => setDriverCharge(e.target.value)} />
-                        </div>
-                        <div className="relative">
-                           <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                           <Input id="deliveryFee" type="number" placeholder="Delivery Fee (flat)" className="pl-8" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
-                        </div>
+                        <div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-8" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} /></div>
+                        <div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-8" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} /></div>
                     </div>
                 </div>
 
                 <Button className="w-full" onClick={handleAddEquipment} disabled={loading || isUserLoading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {loading ? "Listing Equipment..." : "Add Equipment to Marketplace"}
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Listing...</> : "Add Equipment to Marketplace"}
                 </Button>
             </CardContent>
         </Card>
     );
 }
-
-
-    

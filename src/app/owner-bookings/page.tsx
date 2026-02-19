@@ -13,11 +13,9 @@ import { OwnerBookingCard } from "@/components/agri/owner-booking-card";
 
 const statusColors: { [key: string]: string } = {
     pending: "bg-yellow-500 hover:bg-yellow-600",
-    confirmed: "bg-green-500 hover:bg-green-600",
+    accepted: "bg-green-500 hover:bg-green-600",
     rejected: "bg-red-500 hover:bg-red-600",
     cancelled: "bg-gray-500 hover:bg-gray-600",
-    ongoing: "bg-blue-500 hover:bg-blue-600",
-    completed: "bg-primary"
 };
 
 export default function OwnerBookingsPage() {
@@ -26,7 +24,6 @@ export default function OwnerBookingsPage() {
 
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        // Query for bookings where the user is a participant to get all relevant bookings.
         return query(
             collection(firestore, "bookings"),
             where("participants", "array-contains", user.uid),
@@ -36,7 +33,6 @@ export default function OwnerBookingsPage() {
 
     const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
 
-    // Filter client-side for bookings where the user is the owner.
     const ownerBookings = useMemo(() => {
         if (!allUserBookings || !user) return [];
         return allUserBookings.filter(b => b.ownerId === user.uid);
@@ -78,7 +74,7 @@ export default function OwnerBookingsPage() {
                             <div>
                                 <p className="font-semibold">{booking.equipmentName}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    Booked By: <span className="font-mono text-sm">{booking.createdBy.substring(0, 7)}...</span>
+                                    Booked By: <span className="font-mono text-sm">{booking.farmerId.substring(0, 7)}...</span>
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                     Received: {booking.createdAt?.toDate ? format(booking.createdAt.toDate(), 'PP') : 'Just now'}
@@ -86,7 +82,7 @@ export default function OwnerBookingsPage() {
                             </div>
                             <div className="text-right">
                             <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
-                            <p className="font-bold text-lg mt-1">₹{booking.totalAmount.toFixed(2)}</p>
+                            <p className="font-bold text-lg mt-1">₹{booking.totalPrice.toFixed(2)}</p>
                             </div>
                         </div>
                     )) : !isLoading && (

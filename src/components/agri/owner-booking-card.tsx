@@ -15,7 +15,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
     const { toast } = useToast();
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const handleUpdateStatus = async (status: 'confirmed' | 'rejected') => {
+    const handleUpdateStatus = async (status: 'accepted' | 'rejected') => {
         if (!firestore || isUpdating) return;
         setIsUpdating(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
@@ -25,15 +25,13 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
                 title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
                 description: `The booking request has been ${status}.`,
             });
-            // The component will re-render via the onSnapshot listener on the parent page,
-            // so we don't need to set isUpdating back to false on success.
         } catch (error: any) {
              toast({
                 variant: 'destructive',
                 title: "Update Failed",
                 description: error.message || "There was an error updating the booking status.",
             });
-            setIsUpdating(false); // Only set back to false on error
+            setIsUpdating(false); 
         }
     };
 
@@ -43,14 +41,14 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
                 <div>
                     <p className="font-semibold">Request for <span className="font-mono text-sm">{booking.equipmentName}</span></p>
                     <p className="text-sm text-muted-foreground">
-                        From Beneficiary: <span className="font-mono text-sm">{booking.beneficiary.substring(0, 7)}...</span>
+                        From Farmer: <span className="font-mono text-sm">{booking.farmerId.substring(0, 7)}...</span>
                     </p>
                     <p className="text-sm text-muted-foreground">
                         Dates: {booking.startDate?.toDate ? format(booking.startDate.toDate(), 'PPp') : ''} - {booking.endDate?.toDate ? format(booking.endDate.toDate(), 'PPp') : ''}
                     </p>
                 </div>
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <p className="font-bold text-lg whitespace-nowrap">₹{booking.totalAmount.toFixed(2)}</p>
+                    <p className="font-bold text-lg whitespace-nowrap">₹{booking.totalPrice.toFixed(2)}</p>
                     <div className="flex gap-2 ml-auto">
                         {isUpdating ? (
                             <Button size="icon" disabled>
@@ -58,7 +56,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
                             </Button>
                         ) : (
                             <>
-                                <Button aria-label="Confirm" size="icon" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleUpdateStatus('confirmed')}><Check /></Button>
+                                <Button aria-label="Accept" size="icon" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleUpdateStatus('accepted')}><Check /></Button>
                                 <Button aria-label="Reject" size="icon" variant="outline" className="text-red-600 border-red-600 hover:bg-red-100 hover:text-red-700" onClick={() => handleUpdateStatus('rejected')}><X /></Button>
                             </>
                         )}

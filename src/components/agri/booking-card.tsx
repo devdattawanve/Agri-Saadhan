@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import type { Booking } from "@/lib/data";
 import { format } from 'date-fns';
@@ -15,11 +14,9 @@ import { Loader2 } from "lucide-react";
 
 const statusColors: { [key: string]: string } = {
     pending: "bg-yellow-500 hover:bg-yellow-600",
-    confirmed: "bg-green-500 hover:bg-green-600",
+    accepted: "bg-green-500 hover:bg-green-600",
     rejected: "bg-red-500 hover:bg-red-600",
     cancelled: "bg-gray-500 hover:bg-gray-600",
-    ongoing: "bg-blue-500 hover:bg-blue-600",
-    completed: "bg-primary"
 };
 
 export function BookingCard({ booking }: { booking: Booking }) {
@@ -37,7 +34,6 @@ export function BookingCard({ booking }: { booking: Booking }) {
                 title: "Booking Cancelled",
                 description: "Your booking request has been successfully cancelled.",
             });
-            // No need to set isCancelling to false, the component will re-render with the new status
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -67,16 +63,10 @@ export function BookingCard({ booking }: { booking: Booking }) {
                         </div>
                         <div className="flex flex-col items-end gap-2 text-right">
                             <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
-                            <Badge 
-                                variant={booking.paymentStatus === 'completed' ? 'default' : 'secondary'} 
-                                className="capitalize"
-                            >
-                                Payment: {booking.paymentStatus ?? 'Pending'}
-                            </Badge>
                         </div>
                     </div>
                     <div className="flex justify-between items-end mt-4 flex-grow">
-                         <p className="font-bold text-lg self-end">Total: ₹{booking.totalAmount.toFixed(2)}</p>
+                         <p className="font-bold text-lg self-end">Total: ₹{booking.totalPrice.toFixed(2)}</p>
                         {booking.status === 'pending' && (
                             <Button variant="destructive" size="sm" onClick={handleCancelBooking} disabled={isCancelling}>
                                 {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

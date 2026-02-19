@@ -13,14 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, MapPin, FileText, Tractor, IndianRupee, Tag, Info, CheckCircle, XCircle } from "lucide-react";
+import { ShieldCheck, MapPin, FileText, Tractor, IndianRupee, Tag, Info } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import type { Equipment } from "@/lib/data";
 
-// Define User type for owner data
 interface UserProfile {
     name: string;
     [key: string]: any;
@@ -116,55 +115,33 @@ export default function EquipmentDetailPage() {
                     
                     <Separator />
 
-                    <div>
-                        <h3 className="font-semibold font-headline mb-4 flex items-center gap-2"><Tag className="h-5 w-5 text-primary" />Details & Features</h3>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="flex items-start gap-2 text-muted-foreground">
+                     <div>
+                        <h3 className="font-semibold font-headline mb-4 flex items-center gap-2"><Tag className="h-5 w-5 text-primary" />Details</h3>
+                         <div className="flex items-start gap-2 text-muted-foreground text-sm">
                               <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
                               <span>{equipment.village}</span>
                           </div>
-                           <div className="flex items-start gap-2 text-muted-foreground">
-                                {equipment.driverChargePerHour ? <CheckCircle className="h-4 w-4 mt-0.5 shrink-0 text-green-500" /> : <XCircle className="h-4 w-4 mt-0.5 shrink-0 text-red-500" />}
-                                 <span>Driver available</span>
-                             </div>
-                            <div className="flex items-start gap-2 text-muted-foreground">
-                                {equipment.deliveryFee ? <CheckCircle className="h-4 w-4 mt-0.5 shrink-0 text-green-500" /> : <XCircle className="h-4 w-4 mt-0.5 shrink-0 text-red-500" />}
-                                 <span>Delivery available</span>
-                             </div>
-                        </div>
                     </div>
-                    
+
                     <Separator />
                     
                     <div>
                         <h3 className="font-semibold font-headline mb-4 flex items-center gap-2"><IndianRupee className="h-5 w-5 text-primary" />Pricing</h3>
                         <div className="space-y-2">
-                            {equipment.price?.perHour && (
+                            {equipment.pricePerHour && (
                                 <div className="flex justify-between items-baseline text-sm">
                                   <span className="text-muted-foreground">Per Hour</span>
-                                  <p className="font-semibold">₹{equipment.price.perHour}</p>
+                                  <p className="font-semibold">₹{equipment.pricePerHour}</p>
                                 </div>
                             )}
-                            {equipment.price?.perDay && (
+                            {equipment.pricePerDay && (
                                 <div className="flex justify-between items-baseline text-sm">
                                   <span className="text-muted-foreground">Per Day</span>
-                                  <p className="font-semibold">₹{equipment.price.perDay}</p>
+                                  <p className="font-semibold">₹{equipment.pricePerDay}</p>
                                 </div>
                             )}
-                             {equipment.driverChargePerHour && (
-                                <div className="flex justify-between items-baseline text-sm">
-                                  <span className="text-muted-foreground">Driver Charge (per hour)</span>
-                                  <p className="font-semibold">₹{equipment.driverChargePerHour}</p>
-                                </div>
-                            )}
-                             {equipment.deliveryFee && (
-                                <div className="flex justify-between items-baseline text-sm">
-                                  <span className="text-muted-foreground">Delivery Fee (flat)</span>
-                                  <p className="font-semibold">₹{equipment.deliveryFee}</p>
-                                </div>
-                            )}
-                        </div>
-                         {!equipment.price?.perHour && !equipment.price?.perDay && (
+                         </div>
+                         {!equipment.pricePerHour && !equipment.pricePerDay && (
                              <p className="text-muted-foreground text-sm">Price available on request.</p>
                          )}
                     </div>

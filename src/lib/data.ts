@@ -1,4 +1,3 @@
-import { PlaceHolderImages } from './placeholder-images';
 import type { Timestamp } from 'firebase/firestore';
 
 export interface Equipment {
@@ -6,18 +5,11 @@ export interface Equipment {
   name: string;
   type: 'Tractor' | 'Rotavator' | 'Plow' | 'Harvester' | 'Sprayer' | 'General Farm Equipment';
   description: string;
-  owner?: string; // This is for display, ownerId will be the UID
   ownerId: string;
   village: string;
-  distance?: number; // in km - will be calculated dynamically
-  travelTime?: number; // in minutes - will be calculated dynamically
   verified: boolean;
-  price: {
-    perHour?: number;
-    perDay?: number;
-  };
-  driverChargePerHour?: number;
-  deliveryFee?: number;
+  pricePerHour?: number;
+  pricePerDay?: number;
   latitude: number;
   longitude: number;
   geohash: string;
@@ -33,27 +25,18 @@ export interface Booking {
     equipmentName: string;
     equipmentImageUrl: string;
     ownerId: string;
+    farmerId: string; 
     createdBy: string;
-    beneficiary: string;
-    sahayakId?: string;
-    driverId?: string;
     participants: string[];
-    status: 'pending' | 'confirmed' | 'rejected' | 'ongoing' | 'completed' | 'cancelled';
     
+    bookingType: 'hourly' | 'daily';
     startDate: Timestamp;
     endDate: Timestamp;
-    requiresDriver: boolean;
-    pickupType: 'SELF_PICKUP' | 'OWNER_DELIVERY';
+    duration: number; // in hours or days depending on bookingType
+    totalPrice: number;
 
-    baseRate: number;
-    driverCharge: number;
-    deliveryCharge: number;
-    totalAmount: number;
+    status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
 
-    sahayakCommission?: number;
-    platformFee?: number;
-    paymentStatus: 'pending' | 'completed' | 'failed';
-    paymentId?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }

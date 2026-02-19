@@ -26,10 +26,10 @@ export default function MyBookingsPage() {
 
     const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
 
-    // Filter client-side to only show bookings where the user is the beneficiary
+    // Filter client-side to only show bookings where the user is the farmerId
     const bookings = useMemo(() => {
         if (!allUserBookings || !user) return [];
-        return allUserBookings.filter(b => b.beneficiary === user.uid);
+        return allUserBookings.filter(b => b.farmerId === user.uid);
     }, [allUserBookings, user]);
 
     const renderContent = () => {

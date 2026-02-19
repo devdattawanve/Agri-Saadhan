@@ -3,9 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =================================
-    // HELPER FUNCTIONS
-    // =================================
     function isSignedIn() {
       return request.auth != null;
     }
@@ -14,55 +11,44 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isCorrectEquipmentOwner(bookingData) {
-        let equipmentPath = /databases/$(database)/documents/equipment/$(bookingData.equipmentId);
-        return exists(equipmentPath) && 
-               get(equipmentPath).data.ownerId == bookingData.ownerId;
-    }
-
-    function hasValidParticipants(bookingData) {
-      return request.resource.data.participants.hasAll([bookingData.ownerId, bookingData.beneficiary, request.auth.uid]);
-    }
-
-    // =================================
-    // COLLECTION RULES
-    // =================================
-
-    // USERS
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isOwner(userId); // Covers create, update, delete
+      allow write: if isOwner(userId);
     }
     
-    // EQUIPMENT
     match /equipment/{equipmentId} {
-        allow read: if true;
-        allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
-    // BOOKINGS
     match /bookings/{bookingId} {
-      // A user can GET a specific document if they are a participant.
+      // Users can read a booking if they are a participant in it.
       allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
 
-      // A user can LIST bookings if they are signed in.
-      // The client-side query MUST be constrained with a `where` clause to ensure
-      // they only request documents they have permission to see (which is enforced by the `get` rule).
+      // Users can query the bookings collection if they are querying for bookings they participate in.
+      // The client-side code MUST enforce this with a where() clause.
       allow list: if isSignedIn();
-      
-      allow create: if isSignedIn()
-                      && request.resource.data.createdBy == request.auth.uid
-                      && request.resource.data.status == 'pending'
-                      && isCorrectEquipmentOwner(request.resource.data)
-                      && hasValidParticipants(request.resource.data);
 
-      // An owner can confirm/reject, and the creator can cancel a pending booking.
+      // An authenticated user can create a booking request.
+      // - The creator must be the one making the request.
+      // - The status must be 'pending' on creation.
+      // - The creator must be listed in the participants array.
+      allow create: if isSignedIn()
+                      && request.auth.uid == request.resource.data.createdBy
+                      && request.resource.data.status == 'pending'
+                      && request.auth.uid in request.resource.data.participants;
+
+      // An owner can accept/reject a pending request.
+      // The creator can cancel their own pending request.
       allow update: if isSignedIn() && resource.data.status == 'pending' &&
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
-                      ((request.auth.uid == resource.data.ownerId && (request.resource.data.status == 'confirmed' || request.resource.data.status == 'rejected')) ||
-                       (request.auth.uid == resource.data.createdBy && request.resource.data.status == 'cancelled'));
+                      (
+                        (request.auth.uid == resource.data.ownerId && (request.resource.data.status == 'accepted' || request.resource.data.status == 'rejected')) ||
+                        (request.auth.uid == resource.data.createdBy && request.resource.data.status == 'cancelled')
+                      );
       
+      // Bookings should not be deleted to maintain history.
       allow delete: if false;
     }
   }

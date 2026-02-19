@@ -128,27 +128,11 @@
           "type": "string",
           "description": "The village where the equipment is located."
         },
-        "price": {
-          "type": "object",
-          "description": "The rental price of the equipment.",
-          "properties": {
-            "perHour": {
-              "type": "number",
-              "description": "Price per hour"
-            },
-            "perDay": {
-              "type": "number",
-              "description": "Price per day"
-            }
-          }
+        "pricePerHour": {
+          "type": "number"
         },
-        "driverChargePerHour": {
-            "type": "number",
-            "description": "Optional additional charge per hour if a driver is requested."
-        },
-        "deliveryFee": {
-            "type": "number",
-            "description": "Optional flat fee for delivering the equipment to the farmer."
+        "pricePerDay": {
+          "type": "number"
         },
         "verified": {
           "type": "boolean",
@@ -189,7 +173,6 @@
         "name",
         "type",
         "ownerId",
-        "price",
         "village",
         "availabilityStatus"
       ]
@@ -207,42 +190,38 @@
           "type": "string"
         },
         "equipmentName": {
-            "type": "string",
-            "description": "Denormalized name of the equipment for easier display."
+          "type": "string"
         },
         "equipmentImageUrl": {
-            "type": "string",
-            "description": "Denormalized image URL of the equipment for easier display."
+          "type": "string"
         },
         "ownerId": {
           "type": "string"
         },
-        "sahayakId": {
-          "type": "string",
-          "description": "UID of the Sahayak who created the booking, if applicable."
-        },
-        "driverId": {
-          "type": "string",
-          "description": "UID of the Driver assigned to the booking."
+        "farmerId": {
+          "type": "string"
         },
         "createdBy": {
-          "type": "string",
-          "description": "UID of the user who initiated the booking (can be a Farmer or a Sahayak)."
+          "type": "string"
         },
-        "beneficiary": {
-          "type": "string",
-          "description": "UID of the farmer who will use the equipment."
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "status": {
           "type": "string",
           "enum": [
             "pending",
-            "confirmed",
+            "accepted",
             "rejected",
-            "ongoing",
-            "completed",
             "cancelled"
           ]
+        },
+        "bookingType": {
+          "type": "string",
+          "enum": ["hourly", "daily"]
         },
         "startDate": {
             "type": "string",
@@ -252,47 +231,11 @@
             "type": "string",
             "format": "date-time"
         },
-        "requiresDriver": {
-            "type": "boolean"
+        "duration": {
+          "type": "number"
         },
-        "pickupType": {
-            "type": "string",
-            "enum": ["SELF_PICKUP", "OWNER_DELIVERY"]
-        },
-        "baseRate": {
-            "type": "number",
-            "description": "Calculated base cost for the equipment rental duration."
-        },
-        "driverCharge": {
-            "type": "number",
-            "description": "Calculated cost for the driver."
-        },
-        "deliveryCharge": {
-            "type": "number",
-            "description": "Calculated cost for delivery."
-        },
-        "totalAmount": {
-            "type": "number",
-            "description": "The total final amount for the booking."
-        },
-        "sahayakCommission": {
-            "type": "number"
-        },
-        "platformFee": {
-            "type": "number"
-        },
-        "paymentStatus": {
-          "type": "string",
-          "description": "The payment status of the booking.",
-          "enum": [
-            "pending",
-            "completed",
-            "failed"
-          ]
-        },
-        "paymentId": {
-          "type": "string",
-          "description": "The ID of the payment transaction, if applicable."
+        "totalPrice": {
+          "type": "number"
         },
         "createdAt": {
           "type": "string",
@@ -308,13 +251,16 @@
         "equipmentId",
         "ownerId",
         "createdBy",
-        "beneficiary",
+        "farmerId",
+        "participants",
         "status",
         "startDate",
         "endDate",
-        "totalAmount",
+        "totalPrice",
         "equipmentName",
-        "equipmentImageUrl"
+        "equipmentImageUrl",
+        "bookingType",
+        "duration"
       ]
     }
   },
