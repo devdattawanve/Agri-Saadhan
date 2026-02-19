@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from "@/firebase";
 import { collection, doc, serverTimestamp } from "firebase/firestore";
 import type { Equipment, Booking } from "@/lib/data";
 import { Calendar } from "@/components/ui/calendar";
@@ -75,12 +75,16 @@ export default function BookingPage() {
         const ownerId = equipment.ownerId;
         const participants = [...new Set([ownerId, creatorId, farmerId])];
 
-        let bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any };
+        // Generate a new booking ID on the client
+        const newBookingRef = doc(collection(firestore, 'bookings'));
+
+        let bookingData: Omit<Booking, 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any };
         
         if (bookingType === 'hourly' && hourlyDate && hourlyDuration > 0) {
             const startDate = hourlyDate;
             const endDate = addHours(startDate, hourlyDuration);
             bookingData = {
+                id: newBookingRef.id,
                 equipmentId: id, equipmentName: equipment.name, equipmentImageUrl: equipment.imageUrl, ownerId: equipment.ownerId,
                 farmerId: farmerId, createdBy: creatorId, participants, status: 'pending', bookingType: 'hourly',
                 startDate, endDate, duration: hourlyDuration, totalPrice,
@@ -89,6 +93,7 @@ export default function BookingPage() {
         } else if (bookingType === 'daily' && dailyDate?.from && dailyDate?.to) {
             const durationInDays = differenceInCalendarDays(dailyDate.to, dailyDate.from) + 1;
             bookingData = {
+                id: newBookingRef.id,
                 equipmentId: id, equipmentName: equipment.name, equipmentImageUrl: equipment.imageUrl, ownerId: equipment.ownerId,
                 farmerId: farmerId, createdBy: creatorId, participants, status: 'pending', bookingType: 'daily',
                 startDate: startOfDay(dailyDate.from), endDate: endOfDay(dailyDate.to), duration: durationInDays, totalPrice,
@@ -101,8 +106,8 @@ export default function BookingPage() {
         }
 
         try {
-            const newDocRef = await addDocumentNonBlocking(collection(firestore, 'bookings'), bookingData);
-            await setDocumentNonBlocking(newDocRef, { id: newDocRef.id }, { merge: true });
+            // Create the document in a single step
+            await setDocumentNonBlocking(newBookingRef, bookingData);
             toast({ title: "Booking Request Sent", description: "The owner has been notified." });
             router.push('/my-bookings');
         } catch (error: any) {
