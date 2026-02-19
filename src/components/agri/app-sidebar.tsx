@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Users, Home, Warehouse, User as UserIcon, Tractor, Book, Briefcase } from "lucide-react";
-import { Logo } from "./logo";
 
 // Define the user data type inline to avoid complex imports
 interface AppUserData {
@@ -19,7 +18,17 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
     return (
         <nav className="grid items-start text-sm font-medium">
             <div className="mb-4">
-                <Logo />
+                <img
+                  src="https://image2url.com/r2/default/images/1771448027626-30acbb98-1ed9-40fa-a44e-8edfcbad9400.jpeg"
+                  alt="Agri Saadhan Logo"
+                  width={400}
+                  height={194}
+                  style={{
+                    color: 'transparent',
+                    height: 'auto',
+                    maxWidth: '100%',
+                  }}
+                />
             </div>
             <Link
                 href="/dashboard"
