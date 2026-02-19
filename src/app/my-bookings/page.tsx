@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Booking } from "@/lib/data";
@@ -19,8 +19,7 @@ export default function MyBookingsPage() {
         // Query for bookings where the user is a participant. This is more secure and flexible.
         return query(
             collection(firestore, "bookings"),
-            where("participants", "array-contains", user.uid),
-            orderBy("createdAt", "desc")
+            where("participants", "array-contains", user.uid)
         );
     }, [user, firestore]);
 
