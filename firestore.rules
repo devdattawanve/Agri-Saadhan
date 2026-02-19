@@ -23,11 +23,9 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      // A user can GET a booking if they are a participant.
-      allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
-      // A user can LIST bookings if they are signed in.
-      // Client queries MUST include a `where('participants', 'array-contains', <userId>)` clause to enforce security.
-      allow list: if isSignedIn();
+      // A user can read bookings (get or list) if they are a participant.
+      // For list queries, the client query MUST filter by `where('participants', 'array-contains', <userId>)`.
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
 
       // An authenticated user can create a booking request.
       // - The creator must be the one making the request.
@@ -38,14 +36,29 @@ service cloud.firestore {
                       && request.resource.data.status == 'pending'
                       && request.auth.uid in request.resource.data.participants;
 
-      // An owner can accept/reject a pending request.
-      // The creator can cancel their own pending request.
-      allow update: if isSignedIn() && resource.data.status == 'pending' &&
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
-                      (
-                        (request.auth.uid == resource.data.ownerId && (request.resource.data.status == 'accepted' || request.resource.data.status == 'rejected')) ||
-                        (request.auth.uid == resource.data.createdBy && request.resource.data.status == 'cancelled')
-                      );
+      // Update rules for bookings
+      allow update: if isSignedIn() && (
+          // Case 1: Owner accepts/rejects a PENDING request
+          (
+            resource.data.status == 'pending' &&
+            request.auth.uid == resource.data.ownerId &&
+            (request.resource.data.status == 'accepted' || request.resource.data.status == 'rejected') &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'statusChangeAcknowledged'])
+          ) ||
+          // Case 2: Creator cancels their own PENDING request
+          (
+            resource.data.status == 'pending' &&
+            request.auth.uid == resource.data.createdBy &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'statusChangeAcknowledged'])
+          ) ||
+          // Case 3: A participant acknowledges a status change after it's no longer pending
+          (
+            request.auth.uid in resource.data.participants &&
+            (resource.data.status == 'accepted' || resource.data.status == 'rejected') &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusChangeAcknowledged', 'updatedAt'])
+          )
+        );
       
       // Bookings should not be deleted to maintain history.
       allow delete: if false;
