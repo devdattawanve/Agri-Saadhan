@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +26,7 @@ export default function OwnerBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"),
-            where("participants", "array-contains", user.uid),
-            orderBy("createdAt", "desc")
+            where("participants", "array-contains", user.uid)
         );
     }, [user, firestore]);
 
@@ -35,7 +34,13 @@ export default function OwnerBookingsPage() {
 
     const ownerBookings = useMemo(() => {
         if (!allUserBookings || !user) return [];
-        return allUserBookings.filter(b => b.ownerId === user.uid);
+        const filtered = allUserBookings.filter(b => b.ownerId === user.uid);
+        // Sort client-side to avoid needing a composite index
+        return filtered.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+            return dateB - dateA; // Descending order
+        });
     }, [allUserBookings, user]);
     
     const pendingBookings = useMemo(() => ownerBookings?.filter(b => b.status === 'pending') ?? [], [ownerBookings]);
