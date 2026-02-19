@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, MapPin, FileText, Tractor, IndianRupee, Tag, Info } from "lucide-react";
+import { ShieldCheck, MapPin, FileText, Tractor, Tag, Info } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
@@ -130,18 +130,18 @@ export default function EquipmentDetailPage() {
                     <Separator />
                     
                     <div>
-                        <h3 className="font-semibold font-headline mb-4 flex items-center gap-2"><IndianRupee className="h-5 w-5 text-primary" />Pricing</h3>
+                        <h3 className="font-semibold font-headline mb-4 flex items-center gap-2">Pricing</h3>
                         <div className="space-y-2">
                             {pricePerHour && (
                                 <div className="flex justify-between items-baseline text-sm">
                                   <span className="text-muted-foreground">Per Hour</span>
-                                  <p className="font-semibold">₹{pricePerHour}</p>
+                                  <p className="font-semibold">Rs. {pricePerHour}</p>
                                 </div>
                             )}
                             {pricePerDay && (
                                 <div className="flex justify-between items-baseline text-sm">
                                   <span className="text-muted-foreground">Per Day</span>
-                                  <p className="font-semibold">₹{pricePerDay}</p>
+                                  <p className="font-semibold">Rs. {pricePerDay}</p>
                                 </div>
                             )}
                          </div>

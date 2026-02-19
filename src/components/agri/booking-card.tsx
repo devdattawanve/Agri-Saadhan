@@ -66,7 +66,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
                         </div>
                     </div>
                     <div className="flex justify-between items-end mt-4 flex-grow">
-                         <p className="font-bold text-lg self-end">Total: ₹{booking.totalPrice.toFixed(2)}</p>
+                         <p className="font-bold text-lg self-end">Total: Rs. {booking.totalPrice.toFixed(2)}</p>
                         {booking.status === 'pending' && (
                             <Button variant="destructive" size="sm" onClick={handleCancelBooking} disabled={isCancelling}>
                                 {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

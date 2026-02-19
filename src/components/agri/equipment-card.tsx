@@ -70,7 +70,7 @@ export function EquipmentCard({ equipment, isOwner }: { equipment: Equipment; is
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               {displayPrice ? (
                 <span className="font-bold text-lg text-primary">
-                  ₹{displayPrice.amount}
+                  Rs. {displayPrice.amount}
                   <span className="text-sm font-normal">/{displayPrice.unit}</span>
                 </span>
               ) : (

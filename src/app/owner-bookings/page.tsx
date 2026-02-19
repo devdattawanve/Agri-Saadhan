@@ -82,7 +82,7 @@ export default function OwnerBookingsPage() {
                             </div>
                             <div className="text-right">
                             <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
-                            <p className="font-bold text-lg mt-1">₹{booking.totalPrice.toFixed(2)}</p>
+                            <p className="font-bold text-lg mt-1">Rs. {booking.totalPrice.toFixed(2)}</p>
                             </div>
                         </div>
                     )) : !isLoading && (

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Loader2, LinkIcon, UploadCloud, IndianRupee } from "lucide-react";
+import { MapPin, Loader2, LinkIcon, UploadCloud } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -182,8 +182,8 @@ export default function AddEquipmentPage() {
                 <div>
                     <Label>Rental Price</Label>
                     <div className="grid md:grid-cols-2 gap-4 mt-2">
-                        <div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-8" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} /></div>
-                        <div className="relative"><IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-8" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} /></div>
+                        <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rs.</span><Input id="pricePerHour" type="number" placeholder="Price per hour" className="pl-9" value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} /></div>
+                        <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rs.</span><Input id="pricePerDay" type="number" placeholder="Price per day" className="pl-9" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} /></div>
                     </div>
                 </div>
 

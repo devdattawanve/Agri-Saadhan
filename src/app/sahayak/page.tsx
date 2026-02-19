@@ -71,7 +71,7 @@ export default function SahayakPage() {
                         <CardDescription className="text-primary-foreground/80">Your earnings this week.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-5xl font-bold">₹500</p>
+                        <p className="text-5xl font-bold">Rs. 500</p>
                     </CardContent>
                     <CardFooter>
                         <p className="text-xs text-primary-foreground/80">Updated just now.</p>

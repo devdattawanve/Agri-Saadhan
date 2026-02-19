@@ -144,8 +144,8 @@ export default function BookingPage() {
                                 <CardTitle className="font-headline text-2xl">{equipment.name}</CardTitle>
                                 <div className="mt-4 space-y-2">
                                     <h4 className="font-semibold">Pricing</h4>
-                                    {equipment.pricePerHour && <p className="text-sm text-muted-foreground">Per Hour: ₹{equipment.pricePerHour}</p>}
-                                    {equipment.pricePerDay && <p className="text-sm text-muted-foreground">Per Day: ₹{equipment.pricePerDay}</p>}
+                                    {equipment.pricePerHour && <p className="text-sm text-muted-foreground">Per Hour: Rs. {equipment.pricePerHour}</p>}
+                                    {equipment.pricePerDay && <p className="text-sm text-muted-foreground">Per Day: Rs. {equipment.pricePerDay}</p>}
                                 </div>
                             </div>
                         </div>
@@ -215,7 +215,7 @@ export default function BookingPage() {
                         <Separator />
                         <div className="flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span>₹{totalPrice.toFixed(2)}</span>
+                            <span>Rs. {totalPrice.toFixed(2)}</span>
                         </div>
                     </CardContent>
                     <CardFooter>

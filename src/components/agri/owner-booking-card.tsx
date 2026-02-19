@@ -48,7 +48,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
                     </p>
                 </div>
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <p className="font-bold text-lg whitespace-nowrap">₹{booking.totalPrice.toFixed(2)}</p>
+                    <p className="font-bold text-lg whitespace-nowrap">Rs. {booking.totalPrice.toFixed(2)}</p>
                     <div className="flex gap-2 ml-auto">
                         {isUpdating ? (
                             <Button size="icon" disabled>
