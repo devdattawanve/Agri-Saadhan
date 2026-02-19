@@ -33,7 +33,7 @@ export default function BookingPage() {
 
     const [bookingType, setBookingType] = useState<'hourly' | 'daily'>('hourly');
     const [hourlyDuration, setHourlyDuration] = useState(1);
-    const [hourlyDate, setHourlyDate] = useState<Date | undefined>(new Date());
+    const [hourlyDate, setHourlyDate] = useState<Date | undefined>();
     const [dailyDate, setDailyDate] = useState<DateRange | undefined>(undefined);
     
     const [totalPrice, setTotalPrice] = useState(0);
@@ -44,6 +44,11 @@ export default function BookingPage() {
 
     const equipmentDocRef = useMemoFirebase(() => firestore && id ? doc(firestore, 'equipment', id) : null, [firestore, id]);
     const { data: equipment, isLoading: isEquipmentLoading } = useDoc<Equipment>(equipmentDocRef);
+
+    useEffect(() => {
+        // Set initial date on client-side only to avoid hydration mismatch
+        setHourlyDate(new Date());
+    }, []);
 
     useEffect(() => {
         if (!equipment) return;
