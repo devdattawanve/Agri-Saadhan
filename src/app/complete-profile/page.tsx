@@ -69,9 +69,16 @@ export default function CompleteProfilePage() {
                     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
                     const data = await response.json();
                     if (data && data.address) {
-                        const { village, town, city_district, state } = data.address;
-                        const locationString = village || town || city_district || 'Unknown Area';
-                        const finalLocation = `${locationString}, ${state}`;
+                        const { road, suburb, neighbourhood, village, town, city, county, state, postcode } = data.address;
+                        
+                        const area = suburb || neighbourhood || village || road || 'Unknown Area';
+                        const cityOrTown = city || town || '';
+                        const district = county || '';
+                        const pin = postcode || '';
+                        
+                        const addressParts = [area, cityOrTown, district, state, pin].filter(part => part);
+                        const finalLocation = addressParts.join(', ');
+
                         setLocation(finalLocation);
                         toast({ title: "Address Found!", description: finalLocation });
                     } else {

@@ -69,10 +69,36 @@ export default function AddEquipmentPage() {
     const handleDetectLocation = () => {
         setDetectingLocation(true);
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-                toast({ title: "Location Detected!" });
-                setDetectingLocation(false);
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                setCoords({ lat: latitude, lng: longitude });
+                toast({ title: "Location Detected!", description: "Fetching address..." });
+
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+                    const data = await response.json();
+                    if (data && data.address) {
+                        const { road, suburb, neighbourhood, village, town, city, county, state, postcode } = data.address;
+                        
+                        const area = suburb || neighbourhood || village || road || 'Unknown Area';
+                        const cityOrTown = city || town || '';
+                        const district = county || '';
+                        const pin = postcode || '';
+                        
+                        const addressParts = [area, cityOrTown, district, state, pin].filter(part => part);
+                        const finalLocation = addressParts.join(', ');
+
+                        setVillage(finalLocation);
+                        toast({ title: "Address Found!", description: finalLocation });
+                    } else {
+                        toast({ variant: "destructive", title: "Address Not Found", description: "Could not find address. Please enter manually." });
+                    }
+                } catch (error) {
+                    toast({ variant: "destructive", title: "Geocoding Failed", description: "Could not fetch address details." });
+                    console.error("Reverse geocoding error:", error);
+                } finally {
+                    setDetectingLocation(false);
+                }
             },
             (error) => {
                 toast({ variant: "destructive", title: "Location Error", description: "Could not get your location." });
