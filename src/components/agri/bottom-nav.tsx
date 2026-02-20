@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Tractor, CalendarCheck, Wrench, ClipboardList } from "lucide-react";
+import { House, Tractor, CalendarCheck, Wrench, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Define the user data type inline to avoid complex imports
@@ -32,7 +32,7 @@ export function BottomNav({ userData }: { userData?: AppUserData | null }) {
     const isOwner = roles.includes('EQUIPMENT_OWNER');
 
     const navItems = [
-        { href: "/dashboard", icon: Home, label: "Home", show: true },
+        { href: "/dashboard", icon: House, label: "Home", show: true },
         { href: "/equipment", icon: Tractor, label: "Equipment", show: true },
         { href: "/my-bookings", icon: CalendarCheck, label: "My Bookings", show: isFarmer },
         { href: "/my-equipment", icon: Wrench, label: "My Equipment", show: isOwner },

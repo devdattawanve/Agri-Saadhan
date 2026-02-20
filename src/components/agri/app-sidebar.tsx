@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Home, Wrench, User as UserIcon, Tractor, CalendarCheck, ClipboardList } from "lucide-react";
+import { Users, House, Wrench, User as UserIcon, Tractor, CalendarCheck, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 
@@ -53,7 +53,7 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
                   }}
                 />
             </div>
-            <NavLink href="/dashboard" icon={Home} label="Home" exact={true} />
+            <NavLink href="/dashboard" icon={House} label="Home" exact={true} />
             <NavLink href="/equipment" icon={Tractor} label="Equipment" />
 
             {isFarmer && (
