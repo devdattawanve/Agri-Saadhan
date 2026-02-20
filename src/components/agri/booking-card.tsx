@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
-import { doc, serverTimestamp } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Booking } from "@/lib/data";
@@ -73,7 +73,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
             await setDocumentNonBlocking(bookingRef, {
                 status: 'completion_pending',
                 completionOtp: otp,
-                updatedAt: serverTimestamp()
+                updatedAt: new Date()
             }, { merge: true });
     
             toast({
@@ -96,7 +96,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
         setIsSubmittingRating(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            await setDocumentNonBlocking(bookingRef, { rating, ratingDescription: description, updatedAt: serverTimestamp() }, { merge: true });
+            await setDocumentNonBlocking(bookingRef, { rating, ratingDescription: description, updatedAt: new Date() }, { merge: true });
             toast({
                 title: "Rating Submitted",
                 description: "Thank you for your feedback!",
