@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { ThermometerSun, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
@@ -121,7 +121,7 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
                             <p className="text-sm opacity-90">{weather.description}</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <ThermometerSun className="h-10 w-10 text-red-400" />
+                            <Image src="https://image2url.com/r2/default/images/1771594527602-448a0be9-325d-4134-a694-c2c4bef336fd.jpeg" alt="Max Temp" width={40} height={40} className="w-10 h-10" />
                             <p className="font-bold text-xl">{weather.maxTemp}°C</p>
                             <p className="text-sm opacity-90">Max Temp</p>
                         </div>
