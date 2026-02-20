@@ -67,9 +67,21 @@ export function useCollection<T = any>(
         console.error('Firestore Error:', err);
 
         // Safely get the path for the error message.
-        // If the query is a CollectionReference, it will have a 'path' property.
-        // For other queries, we'll use a placeholder. This prevents a runtime crash.
-        const path = (memoizedTargetRefOrQuery as CollectionReference)?.path || 'unknown-query-path';
+        let path = 'unknown-query-path';
+        if (memoizedTargetRefOrQuery) {
+            // For CollectionReference, the path is public.
+            if ('path' in memoizedTargetRefOrQuery && typeof (memoizedTargetRefOrQuery as any).path === 'string') {
+                path = (memoizedTargetRefOrQuery as CollectionReference).path;
+            } 
+            // For complex Queries, we resort to a non-public property.
+            // This is not ideal but crucial for debugging. It may break in future SDK updates.
+            else if ('_query' in memoizedTargetRefOrQuery) {
+                const internalQuery = (memoizedTargetRefOrQuery as any)._query;
+                if (internalQuery && internalQuery.path && Array.isArray(internalQuery.path.segments)) {
+                    path = internalQuery.path.segments.join('/');
+                }
+            }
+        }
 
         if (err.code === 'permission-denied') {
           const contextualError = new FirestorePermissionError({
