@@ -68,7 +68,7 @@ service cloud.firestore {
             resource.data.status == 'accepted' &&
             request.auth.uid == resource.data.ownerId &&
             request.resource.data.status == 'completed' &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
           ) ||
           // Case 5: Farmer submits a rating for a COMPLETED booking.
           (

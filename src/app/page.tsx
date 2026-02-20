@@ -24,14 +24,18 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.replace('/dashboard');
+      router.replace("/dashboard");
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || user) {
-    return <SplashScreen />; // Show a simple loading screen while checking auth or before redirecting.
+  if (isUserLoading) {
+    return <SplashScreen />;
   }
-  
+
+  if (user) {
+    return null; // prevent flashing
+  }
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -42,11 +46,14 @@ export default function OnboardingPage() {
               Choose your preferred language to continue
             </p>
           </CardHeader>
+
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               {languages.map((lang) => (
                 <Button key={lang.code} variant="outline" asChild>
-                  <Link href="/login">{lang.name}</Link>
+                  <Link href={`/login?lang=${lang.code}`}>
+                    {lang.name}
+                  </Link>
                 </Button>
               ))}
             </div>
