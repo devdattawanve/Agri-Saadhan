@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
-import { doc, serverTimestamp } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import type { Booking } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +39,7 @@ export function OwnerBookingHistoryCard({ booking }: { booking: Booking }) {
         setIsCompleting(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            await setDocumentNonBlocking(bookingRef, { status: 'completed', updatedAt: serverTimestamp() }, { merge: true });
+            await setDocumentNonBlocking(bookingRef, { status: 'completed', updatedAt: new Date() }, { merge: true });
             toast({
                 title: "Booking Completed!",
                 description: "The booking has been marked as completed.",
