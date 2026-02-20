@@ -36,13 +36,13 @@ const pageTitles: { [key: string]: string } = {
 };
 
 const HeaderSkeleton = () => (
-    <header className="flex h-16 items-center justify-between gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
+    <header className="flex h-16 items-center justify-between gap-4 border-b border-sidebar-border bg-sidebar px-4 md:px-6 sticky top-0 z-30">
         <div className="flex items-center gap-4">
-            <Skeleton className="h-8 w-8 md:hidden" />
-            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-8 w-8 md:hidden bg-sidebar-accent" />
+            <Skeleton className="h-6 w-32 bg-sidebar-accent" />
         </div>
         <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-10 w-10 rounded-full bg-sidebar-accent" />
         </div>
     </header>
 );
@@ -96,8 +96,8 @@ export function AppHeader() {
 
   return (
     <header className={cn(
-        "flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30",
-        isWorkMode && "bg-amber-600"
+        "flex h-16 shrink-0 items-center justify-between gap-4 border-b border-sidebar-border bg-sidebar text-sidebar-foreground px-4 md:px-6 sticky top-0 z-30",
+        isWorkMode && "bg-amber-600 text-white border-amber-700"
     )}>
       <div className="flex items-center gap-2">
         <SidebarTrigger className={cn("md:hidden", isWorkMode && "border-amber-400 text-white hover:bg-amber-500")} />
@@ -107,7 +107,7 @@ export function AppHeader() {
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={userData?.profilePictureUrl || undefined} alt={userData?.name} />
                 <AvatarFallback>
