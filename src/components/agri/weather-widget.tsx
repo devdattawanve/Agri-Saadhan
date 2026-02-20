@@ -116,7 +116,7 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
                 ) : weather ? (
                     <>
                         <div className="flex flex-col items-center gap-2">
-                            {weather.description === 'Sunny' ? <Image src="https://image2url.com/r2/default/images/1771595298460-5b40f3f3-46f9-4698-95bc-d86daef0902f.jpeg" alt="Sunny" width={40} height={40} className="w-10 h-10" /> : <Image src="https://image2url.com/r2/default/images/1771591951503-a3af9090-5ecc-45e9-abf8-227f15f6c76f.png" alt="Cloudy" width={40} height={40} className="w-10 h-10" /> }
+                            {weather.description === 'Sunny' ? <Image src="https://image2url.com/r2/default/images/1771596189257-748eb3db-a692-4782-b322-c153aea530b1.jpeg" alt="Sunny" width={40} height={40} className="w-10 h-10" /> : <Image src="https://image2url.com/r2/default/images/1771591951503-a3af9090-5ecc-45e9-abf8-227f15f6c76f.png" alt="Cloudy" width={40} height={40} className="w-10 h-10" /> }
                             <p className="font-bold text-xl">{weather.temp}°C</p>
                             <p className="text-sm opacity-90">{weather.description}</p>
                         </div>
