@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { MapPin } from "lucide-react";
+import { MapPin, Thermometer } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
@@ -116,12 +116,12 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
                 ) : weather ? (
                     <>
                         <div className="flex flex-col items-center gap-2">
-                            {weather.description === 'Sunny' ? <Image src="https://image2url.com/r2/default/images/1771593873258-c676d9aa-0001-46b9-a357-01c8b9a7f001.jpeg" alt="Sunny" width={40} height={40} className="w-10 h-10" /> : <Image src="https://image2url.com/r2/default/images/1771591951503-a3af9090-5ecc-45e9-abf8-227f15f6c76f.png" alt="Cloudy" width={40} height={40} className="w-10 h-10" /> }
+                            {weather.description === 'Sunny' ? <Image src="https://image2url.com/r2/default/images/1771595298460-5b40f3f3-46f9-4698-95bc-d86daef0902f.jpeg" alt="Sunny" width={40} height={40} className="w-10 h-10" /> : <Image src="https://image2url.com/r2/default/images/1771591951503-a3af9090-5ecc-45e9-abf8-227f15f6c76f.png" alt="Cloudy" width={40} height={40} className="w-10 h-10" /> }
                             <p className="font-bold text-xl">{weather.temp}°C</p>
                             <p className="text-sm opacity-90">{weather.description}</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <Image src="https://image2url.com/r2/default/images/1771594527602-448a0be9-325d-4134-a694-c2c4bef336fd.jpeg" alt="Max Temp" width={40} height={40} className="w-10 h-10" />
+                            <Thermometer className="w-10 h-10" />
                             <p className="font-bold text-xl">{weather.maxTemp}°C</p>
                             <p className="text-sm opacity-90">Max Temp</p>
                         </div>
