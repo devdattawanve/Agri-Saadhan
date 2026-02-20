@@ -12,6 +12,11 @@ import {
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+// Utility to detect permission error
+function isPermissionError(error: any) {
+  return error?.code === 'permission-denied';
+}
+
 // =============================
 // SET DOCUMENT
 // =============================
@@ -26,15 +31,18 @@ export async function setDocumentNonBlocking(
     } else {
       await setDoc(docRef, data);
     }
-  } catch (error) {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: docRef.path,
-        operation: options && 'merge' in options ? 'update' : 'create',
-        requestResourceData: data,
-      })
-    );
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: docRef.path,
+          operation: options ? 'update' : 'create',
+          requestResourceData: data,
+        })
+      );
+    }
+
     throw error;
   }
 }
@@ -47,23 +55,25 @@ export async function addDocumentNonBlocking(
   data: any
 ) {
   try {
-    const docRef = await addDoc(colRef, data);
-    return docRef;
-  } catch (error) {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: colRef.path,
-        operation: 'create',
-        requestResourceData: data,
-      })
-    );
+    return await addDoc(colRef, data);
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: colRef.path,
+          operation: 'create',
+          requestResourceData: data,
+        })
+      );
+    }
+
     throw error;
   }
 }
 
 // =============================
-// UPDATE DOCUMENT  🔥 FIXED
+// UPDATE DOCUMENT
 // =============================
 export async function updateDocumentNonBlocking(
   docRef: DocumentReference,
@@ -71,16 +81,19 @@ export async function updateDocumentNonBlocking(
 ) {
   try {
     await updateDoc(docRef, data);
-  } catch (error) {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'update',
-        requestResourceData: data,
-      })
-    );
-    throw error; // important
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
+        })
+      );
+    }
+
+    throw error;
   }
 }
 
@@ -92,14 +105,17 @@ export async function deleteDocumentNonBlocking(
 ) {
   try {
     await deleteDoc(docRef);
-  } catch (error) {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'delete',
-      })
-    );
+  } catch (error: any) {
+    if (isPermissionError(error)) {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        })
+      );
+    }
+
     throw error;
   }
 }
