@@ -23,8 +23,8 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      // A user can GET a single booking if they are a participant.
-      allow get: if isSignedIn() && request.auth.uid in resource.data.participants;
+      // A user can GET a single booking if they are the owner OR a participant.
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.ownerId || request.auth.uid in resource.data.participants);
       
       // A user can LIST bookings. The client-side query is responsible for filtering
       // to only show bookings where the user is a participant.
@@ -83,7 +83,7 @@ service cloud.firestore {
             request.auth.uid == resource.data.farmerId &&
              // Allow setting rating for the first time
             !('rating' in resource.data) &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingDescription', 'updatedAt'])
+            request.resource.data.diff(resource.data).hasOnly(['rating', 'ratingDescription', 'updatedAt'])
           )
         );
       
