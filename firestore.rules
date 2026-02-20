@@ -42,12 +42,13 @@ service cloud.firestore {
 
       // Update rules for bookings
       allow update: if isSignedIn() && (
-          // Case 1: Owner accepts/rejects a PENDING request
+          // Case 1: Owner accepts/rejects a PENDING request.
           (
             resource.data.status == 'pending' &&
             request.auth.uid == resource.data.ownerId &&
             (request.resource.data.status == 'accepted' || request.resource.data.status == 'rejected') &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'statusChangeAcknowledged'])
+            // On accept, OTP can also be written.
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'statusChangeAcknowledged', 'completionOtp'])
           ) ||
           // Case 2: Creator cancels their own PENDING request
           (
@@ -61,6 +62,21 @@ service cloud.firestore {
             request.auth.uid in resource.data.participants &&
             (resource.data.status == 'accepted' || resource.data.status == 'rejected') &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusChangeAcknowledged', 'updatedAt'])
+          ) ||
+           // Case 4: Owner completes an ACCEPTED booking
+          (
+            resource.data.status == 'accepted' &&
+            request.auth.uid == resource.data.ownerId &&
+            request.resource.data.status == 'completed' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          // Case 5: Farmer submits a rating for a COMPLETED booking.
+          (
+            resource.data.status == 'completed' &&
+            request.auth.uid == resource.data.farmerId &&
+             // Allow setting rating for the first time
+            !('rating' in resource.data) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingDescription', 'updatedAt'])
           )
         );
       

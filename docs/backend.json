@@ -216,12 +216,25 @@
             "pending",
             "accepted",
             "rejected",
-            "cancelled"
+            "cancelled",
+            "completed"
           ]
         },
         "statusChangeAcknowledged": {
           "type": "boolean",
           "description": "Tracks if the farmer has been notified of a status change."
+        },
+        "completionOtp": {
+            "type": "string",
+            "description": "A 6-digit OTP generated when a booking is accepted, used to verify completion."
+        },
+        "rating": {
+            "type": "number",
+            "description": "A 1-5 star rating given by the farmer after completion."
+        },
+        "ratingDescription": {
+            "type": "string",
+            "description": "A textual description or feedback from the farmer along with the rating."
         },
         "bookingType": {
           "type": "string",

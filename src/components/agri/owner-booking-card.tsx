@@ -56,7 +56,14 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
         setIsUpdating(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            await setDocumentNonBlocking(bookingRef, { status, updatedAt: serverTimestamp(), statusChangeAcknowledged: false }, { merge: true });
+            let updateData: any = { status, updatedAt: serverTimestamp(), statusChangeAcknowledged: false };
+            if (status === 'accepted') {
+                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                updateData.completionOtp = otp;
+            }
+
+            await setDocumentNonBlocking(bookingRef, updateData, { merge: true });
+
             toast({
                 title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
                 description: `The booking request has been ${status}.`,

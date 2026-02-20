@@ -5,18 +5,11 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebas
 import { collection, query, where } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import type { Booking } from "@/lib/data";
-import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { OwnerBookingCard } from "@/components/agri/owner-booking-card";
+import { OwnerBookingHistoryCard } from "@/components/agri/owner-booking-history-card";
 
-const statusColors: { [key: string]: string } = {
-    pending: "bg-yellow-500 hover:bg-yellow-600",
-    accepted: "bg-green-500 hover:bg-green-600",
-    rejected: "bg-red-500 hover:bg-red-600",
-    cancelled: "bg-gray-500 hover:bg-gray-600",
-};
 
 export default function OwnerBookingsPage() {
     const { user } = useUser();
@@ -26,25 +19,24 @@ export default function OwnerBookingsPage() {
         if (!user || !firestore) return null;
         return query(
             collection(firestore, "bookings"),
-            where("participants", "array-contains", user.uid)
+            where("ownerId", "==", user.uid)
         );
     }, [user, firestore]);
 
-    const { data: allUserBookings, isLoading } = useCollection<Booking>(bookingsQuery);
-
-    const ownerBookings = useMemo(() => {
-        if (!allUserBookings || !user) return [];
-        const filtered = allUserBookings.filter(b => b.ownerId === user.uid);
-        // Sort client-side to avoid needing a composite index
-        return filtered.sort((a, b) => {
-            const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
-            const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
-            return dateB - dateA; // Descending order
-        });
-    }, [allUserBookings, user]);
+    const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
     
-    const pendingBookings = useMemo(() => ownerBookings?.filter(b => b.status === 'pending') ?? [], [ownerBookings]);
-    const otherBookings = useMemo(() => ownerBookings?.filter(b => b.status !== 'pending') ?? [], [ownerBookings]);
+    const { pendingBookings, otherBookings } = useMemo(() => {
+        if (!ownerBookings) return { pendingBookings: [], otherBookings: [] };
+
+        const pending = ownerBookings.filter(b => b.status === 'pending');
+        const others = ownerBookings.filter(b => b.status !== 'pending');
+
+        // Sort client-side to avoid needing a composite index
+        pending.sort((a, b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0));
+        others.sort((a, b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0));
+        
+        return { pendingBookings: pending, otherBookings: others };
+    }, [ownerBookings]);
 
     return (
         <div className="space-y-8">
@@ -68,28 +60,14 @@ export default function OwnerBookingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">All Bookings</CardTitle>
+                    <CardTitle className="font-headline">Booking History</CardTitle>
                     <CardDescription>A history of all bookings for your equipment.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {isLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
                     
                     {!isLoading && otherBookings.length > 0 ? otherBookings.map(booking => (
-                        <div key={booking.id} className="border rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <p className="font-semibold">{booking.equipmentName}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Booked By: <span className="font-mono text-sm">{booking.farmerId.substring(0, 7)}...</span>
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Received: {booking.createdAt?.toDate ? format(booking.createdAt.toDate(), 'PP') : 'Just now'}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                            <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
-                            <p className="font-bold text-lg mt-1">Rs. {booking.totalPrice.toFixed(2)}</p>
-                            </div>
-                        </div>
+                        <OwnerBookingHistoryCard key={booking.id} booking={booking} />
                     )) : !isLoading && (
                          <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
                             You have no historical bookings for your equipment.
