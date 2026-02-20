@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useFirestore, setDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, serverTimestamp } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import type { Booking } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +57,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
         setIsUpdating(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            let updateData: any = { status, updatedAt: serverTimestamp(), statusChangeAcknowledged: false };
+            let updateData: any = { status, updatedAt: new Date(), statusChangeAcknowledged: false };
             if (status === 'accepted') {
                 const otp = "123456";
                 updateData.completionOtp = otp;
@@ -90,7 +90,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
                                 <p className="font-semibold">Request for <span className="font-bold">{booking.equipmentName}</span></p>
                                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                     <Calendar className="h-4 w-4" />
-                                    <span>{format(booking.startDate.toDate(), 'PP')}</span>
+                                    <span>{booking.startDate.toDate ? format(booking.startDate.toDate(), 'PP') : ''}</span>
                                 </div>
                                 <div className="text-sm text-muted-foreground flex items-center gap-2">
                                      <Clock className="h-4 w-4" />
