@@ -8,15 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/agri/logo";
 import { useAuth } from "@/firebase";
-import { signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
+import { signInWithPhoneNumber } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRecaptcha } from "@/hooks/use-recaptcha";
 
 declare global {
     interface Window {
-        recaptchaVerifier: RecaptchaVerifier;
         confirmationResult: any;
-        grecaptcha: any;
     }
 }
 
@@ -27,26 +26,36 @@ export default function LoginPage() {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [loading, setLoading] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const appVerifier = useRecaptcha('recaptcha-container');
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
     const handleSendOtp = async () => {
-        if (!auth) return;
+        if (!auth || !appVerifier) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Authentication service not ready. Please wait a moment and try again.",
+            });
+            return;
+        };
         setLoading(true);
         try {
-            const appVerifier = window.recaptchaVerifier;
             const confirmationResult = await signInWithPhoneNumber(auth, `+91${phoneNumber}`, appVerifier);
             window.confirmationResult = confirmationResult;
-            router.push("/verify-otp");
+            router.push(`/verify-otp?phone=${phoneNumber}`);
         } catch (error: any) {
             console.error("Error sending OTP:", error);
 
             let description = "Failed to send OTP. Please try again.";
             if (error.code === 'auth/operation-not-allowed') {
                 description = "Phone number sign-in is not enabled for this project. Please enable it in the Firebase console.";
-            } else {
+            } else if (error.code === 'auth/invalid-phone-number') {
+                description = "The phone number you entered is not valid.";
+            }
+             else {
                 description = error.message || description;
             }
 
@@ -56,38 +65,10 @@ export default function LoginPage() {
                 description: description,
             });
             
-            // Reset reCAPTCHA
-            if (window.grecaptcha && window.recaptchaVerifier) {
-              window.recaptchaVerifier.render().then((widgetId) => {
-                window.grecaptcha.reset(widgetId);
-              });
-            }
         } finally {
             setLoading(false);
         }
     };
-
-    // This effect sets up the reCAPTCHA verifier
-    useEffect(() => {
-        if (!isMounted || !auth) {
-            return;
-        }
-
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-            'callback': () => {
-                // reCAPTCHA solved, allow signInWithPhoneNumber.
-            }
-        });
-
-        window.recaptchaVerifier = verifier;
-        verifier.render();
-
-        // Cleanup function to clear the verifier when the component unmounts
-        return () => {
-            verifier.clear();
-        };
-    }, [auth, isMounted]);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -129,7 +110,7 @@ export default function LoginPage() {
               <Button 
                 className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
                 onClick={handleSendOtp}
-                disabled={loading || phoneNumber.length !== 10}
+                disabled={loading || phoneNumber.length !== 10 || !appVerifier}
               >
                 {loading ? "Sending OTP..." : "Send OTP"}
               </Button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/agri/logo";
 import { useToast } from "@/hooks/use-toast";
+import { useRecaptcha } from "@/hooks/use-recaptcha";
+import { signInWithPhoneNumber } from "firebase/auth";
 
 export default function VerifyOtpPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const auth = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
+    
+    const phone = searchParams.get('phone');
+    const appVerifier = useRecaptcha('recaptcha-container-verify');
 
     const handleVerifyOtp = async () => {
         setLoading(true);
@@ -55,8 +63,31 @@ export default function VerifyOtpPage() {
         }
     };
 
+    const handleResendOtp = async () => {
+        if (!auth || !phone || !appVerifier) {
+            toast({ title: "Error", description: "Cannot resend OTP at this moment.", variant: "destructive" });
+            return;
+        }
+        setResending(true);
+        try {
+            const confirmationResult = await signInWithPhoneNumber(auth, `+91${phone}`, appVerifier);
+            window.confirmationResult = confirmationResult;
+            toast({ title: "OTP Resent", description: "A new OTP has been sent to your number." });
+        } catch (error: any) {
+             console.error("Error resending OTP:", error);
+             toast({
+                variant: "destructive",
+                title: "Resend Failed",
+                description: error.message || "Could not resend OTP. Please try again.",
+            });
+        } finally {
+            setResending(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+            <div id="recaptcha-container-verify" className="hidden"></div>
             <Card className="w-full max-w-md shadow-2xl">
                 <CardHeader className="items-center">
                     <Logo />
@@ -84,7 +115,14 @@ export default function VerifyOtpPage() {
                     >
                         {loading ? "Verifying..." : "Verify"}
                     </Button>
-                    <Button variant="link" className="w-full">Call Me for OTP</Button>
+                    <Button 
+                        variant="link" 
+                        className="w-full" 
+                        onClick={handleResendOtp} 
+                        disabled={resending || !appVerifier}
+                    >
+                        {resending ? "Resending..." : "Resend OTP"}
+                    </Button>
                 </CardContent>
                 <CardFooter className="flex-col gap-4">
                     <p className="text-sm font-bold text-muted-foreground">
