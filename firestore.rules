@@ -82,12 +82,12 @@ service cloud.firestore {
           (
             resource.data.status == 'completed' &&
             request.auth.uid == resource.data.farmerId &&
-             // Allow setting rating for the first time
+            // Allow setting rating for the first time
             !('rating' in resource.data) &&
-            // Ensure only allowed fields are being updated.
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingDescription', 'updatedAt']) &&
-            // Also ensure the core 'rating' field is actually part of the update.
-            request.resource.data.diff(resource.data).affectedKeys().has('rating')
+            // Ensure the core 'rating' and 'updatedAt' fields are being updated.
+            request.resource.data.diff(resource.data).affectedKeys().hasAll(['rating', 'updatedAt']) &&
+            // Allow an optional 'ratingDescription' but nothing else.
+            request.resource.data.diff(resource.data).affectedKeys().size() <= 3
           )
         );
       
