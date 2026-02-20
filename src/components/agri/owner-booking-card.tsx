@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -58,7 +59,7 @@ export function OwnerBookingCard({ booking }: { booking: Booking }) {
         try {
             let updateData: any = { status, updatedAt: serverTimestamp(), statusChangeAcknowledged: false };
             if (status === 'accepted') {
-                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                const otp = "123456";
                 updateData.completionOtp = otp;
             }
 
