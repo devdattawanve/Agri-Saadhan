@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Logo } from "@/components/agri/logo";
 import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { SplashScreen } from "@/components/agri/splash-screen";
+import { SecondarySplashScreen } from "@/components/agri/secondary-splash-screen";
 
 const languages = [
   { name: "English", code: "en" },
@@ -21,21 +22,47 @@ const languages = [
 export default function OnboardingPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const [splashState, setSplashState] = useState<'initial' | 'secondary' | 'done'>('initial');
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    // Transition from initial to secondary splash once auth is checked
+    if (!isUserLoading && splashState === 'initial') {
+      setSplashState('secondary');
+    }
+  }, [isUserLoading, splashState]);
+
+  useEffect(() => {
+    // Transition from secondary splash to done after a delay
+    if (splashState === 'secondary') {
+      const timer = setTimeout(() => {
+        setSplashState('done');
+      }, 2500); // 2.5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [splashState]);
+
+  useEffect(() => {
+    // Redirect when splashing is done and user is logged in
+    if (splashState === 'done' && user) {
       router.replace("/dashboard");
     }
-  }, [user, isUserLoading, router]);
+  }, [splashState, user, router]);
 
-  if (isUserLoading) {
+  // Render based on splash state
+  if (splashState === 'initial' || isUserLoading) {
     return <SplashScreen />;
   }
 
-  if (user) {
-    return null; // prevent flashing
+  if (splashState === 'secondary') {
+    return <SecondarySplashScreen />;
   }
 
+  // splashState is 'done' from here on
+  if (user) {
+    return null; // Don't show content, we are redirecting
+  }
+
+  // If splash is done and no user, show onboarding
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
