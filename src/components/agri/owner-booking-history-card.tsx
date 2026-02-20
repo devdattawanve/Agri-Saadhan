@@ -39,7 +39,7 @@ export function OwnerBookingHistoryCard({ booking }: { booking: Booking }) {
         setIsCompleting(true);
         const bookingRef = doc(firestore, 'bookings', booking.id);
         try {
-            await setDocumentNonBlocking(bookingRef, { status: 'completed', updatedAt: new Date() }, { merge: true });
+            await setDocumentNonBlocking(bookingRef, { status: 'completed' }, { merge: true });
             toast({
                 title: "Booking Completed!",
                 description: "The booking has been marked as completed.",
