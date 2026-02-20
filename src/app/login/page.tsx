@@ -69,15 +69,24 @@ export default function LoginPage() {
 
     // This effect sets up the reCAPTCHA verifier
     useEffect(() => {
-        if (isMounted && auth && !window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': () => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
-                }
-            });
-            window.recaptchaVerifier.render();
+        if (!isMounted || !auth) {
+            return;
         }
+
+        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {
+                // reCAPTCHA solved, allow signInWithPhoneNumber.
+            }
+        });
+
+        window.recaptchaVerifier = verifier;
+        verifier.render();
+
+        // Cleanup function to clear the verifier when the component unmounts
+        return () => {
+            verifier.clear();
+        };
     }, [auth, isMounted]);
 
   return (
