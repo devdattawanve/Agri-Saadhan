@@ -10,71 +10,105 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { OwnerBookingCard } from "@/components/agri/owner-booking-card";
 import { OwnerBookingHistoryCard } from "@/components/agri/owner-booking-history-card";
 
-
 export default function OwnerBookingsPage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-    const bookingsQuery = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return query(
-            collection(firestore, "bookings"),
-            where("ownerId", "==", user.uid)
-        );
-    }, [user, firestore]);
+  const bookingsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
 
-    const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
-    
-    const { pendingBookings, otherBookings } = useMemo(() => {
-        if (!ownerBookings) return { pendingBookings: [], otherBookings: [] };
-
-        const pending = ownerBookings.filter(b => b.status === 'pending');
-        const others = ownerBookings.filter(b => b.status !== 'pending');
-
-        // Sort client-side to avoid needing a composite index
-        pending.sort((a, b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0));
-        others.sort((a, b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0));
-        
-        return { pendingBookings: pending, otherBookings: others };
-    }, [ownerBookings]);
-
-    return (
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Pending Requests</CardTitle>
-                    <CardDescription>These are new booking requests that need your approval.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {isLoading && <Skeleton className="h-24 w-full" />}
-                    {!isLoading && pendingBookings.length > 0 ? pendingBookings.map(booking => (
-                        <OwnerBookingCard key={booking.id} booking={booking} />
-                    )) : !isLoading && (
-                        <Alert>
-                            <AlertTitle>All Caught Up!</AlertTitle>
-                            <AlertDescription>You have no pending booking requests.</AlertDescription>
-                        </Alert>
-                    )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Booking History</CardTitle>
-                    <CardDescription>A history of all bookings for your equipment.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {isLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-                    
-                    {!isLoading && otherBookings.length > 0 ? otherBookings.map(booking => (
-                        <OwnerBookingHistoryCard key={booking.id} booking={booking} />
-                    )) : !isLoading && (
-                         <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
-                            You have no historical bookings for your equipment.
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+    return query(
+      collection(firestore, "bookings"),
+      where("ownerId", "==", user.uid)
     );
+  }, [user, firestore]);
+
+  const { data: ownerBookings, isLoading } = useCollection<Booking>(bookingsQuery);
+
+  const { pendingBookings, otherBookings } = useMemo(() => {
+    if (!ownerBookings) {
+      return { pendingBookings: [], otherBookings: [] };
+    }
+
+    const pending = ownerBookings
+      .filter((b) => b.status === "pending")
+      .sort(
+        (a, b) =>
+          (b.createdAt?.toDate?.().getTime?.() || 0) -
+          (a.createdAt?.toDate?.().getTime?.() || 0)
+      );
+
+    const others = ownerBookings
+      .filter((b) => b.status !== "pending")
+      .sort(
+        (a, b) =>
+          (b.createdAt?.toDate?.().getTime?.() || 0) -
+          (a.createdAt?.toDate?.().getTime?.() || 0)
+      );
+
+    return {
+      pendingBookings: pending,
+      otherBookings: others,
+    };
+  }, [ownerBookings]);
+
+  return (
+    <div className="space-y-8">
+      {/* Pending Requests */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Pending Requests</CardTitle>
+          <CardDescription>
+            These are new booking requests that need your approval.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {isLoading && <Skeleton className="h-24 w-full" />}
+
+          {!isLoading && pendingBookings.length > 0 &&
+            pendingBookings.map((booking) => (
+              <OwnerBookingCard key={booking.id} booking={booking} />
+            ))}
+
+          {!isLoading && pendingBookings.length === 0 && (
+            <Alert>
+              <AlertTitle>All Caught Up!</AlertTitle>
+              <AlertDescription>
+                You have no pending booking requests.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Booking History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Booking History</CardTitle>
+          <CardDescription>
+            A history of all bookings for your equipment.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {isLoading &&
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+
+          {!isLoading && otherBookings.length > 0 &&
+            otherBookings.map((booking) => (
+              <OwnerBookingHistoryCard key={booking.id} booking={booking} />
+            ))}
+
+          {!isLoading && otherBookings.length === 0 && (
+            <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
+              You have no historical bookings for your equipment.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
