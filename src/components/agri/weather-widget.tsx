@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { Cloudy, Sun, ThermometerSun, MapPin, Umbrella } from "lucide-react";
+import { Sun, ThermometerSun, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface WeatherData {
     temp: number;
@@ -115,7 +116,7 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
                 ) : weather ? (
                     <>
                         <div className="flex flex-col items-center gap-2">
-                            {weather.description === 'Sunny' ? <Sun className="h-10 w-10 text-yellow-400" /> : <Cloudy className="h-10 w-10 text-blue-300" /> }
+                            {weather.description === 'Sunny' ? <Sun className="h-10 w-10 text-yellow-400" /> : <Image src="https://image2url.com/r2/default/images/1771591951503-a3af9090-5ecc-45e9-abf8-227f15f6c76f.png" alt="Cloudy" width={40} height={40} className="w-10 h-10" /> }
                             <p className="font-bold text-xl">{weather.temp}°C</p>
                             <p className="text-sm opacity-90">{weather.description}</p>
                         </div>
@@ -125,7 +126,7 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
                             <p className="text-sm opacity-90">Max Temp</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <Umbrella className="h-10 w-10 text-blue-400" />
+                            <Image src="https://image2url.com/r2/default/images/1771592111717-ac8d54f6-aee5-4fb5-b0f6-85e2ef15501b.jpeg" alt="Rain chance" width={40} height={40} className="w-10 h-10" />
                             <p className="font-bold text-xl">{weather.rainChance}%</p>
                             <p className="text-sm opacity-90">Rain</p>
                         </div>
