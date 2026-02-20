@@ -35,7 +35,7 @@ export interface Booking {
     duration: number; // in hours or days depending on bookingType
     totalPrice: number;
 
-    status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completed';
+    status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completion_pending' | 'completed';
     statusChangeAcknowledged?: boolean;
     completionOtp?: string;
     rating?: number;

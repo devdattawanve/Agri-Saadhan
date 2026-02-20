@@ -47,8 +47,8 @@ service cloud.firestore {
             resource.data.status == 'pending' &&
             request.auth.uid == resource.data.ownerId &&
             (request.resource.data.status == 'accepted' || request.resource.data.status == 'rejected') &&
-            // On accept, OTP can also be written.
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'statusChangeAcknowledged', 'completionOtp'])
+            // OTP is no longer written here
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'statusChangeAcknowledged'])
           ) ||
           // Case 2: Creator cancels their own PENDING request
           (
@@ -63,9 +63,16 @@ service cloud.firestore {
             (resource.data.status == 'accepted' || resource.data.status == 'rejected') &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusChangeAcknowledged', 'updatedAt'])
           ) ||
-           // Case 4: Owner completes an ACCEPTED booking
+           // NEW Case: Farmer initiates completion from ACCEPTED state
           (
             resource.data.status == 'accepted' &&
+            request.auth.uid == resource.data.farmerId &&
+            request.resource.data.status == 'completion_pending' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'completionOtp'])
+          ) ||
+           // MODIFIED Case 4: Owner completes a COMPLETION_PENDING booking
+          (
+            resource.data.status == 'completion_pending' &&
             request.auth.uid == resource.data.ownerId &&
             request.resource.data.status == 'completed' &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])

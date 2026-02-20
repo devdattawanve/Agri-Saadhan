@@ -19,6 +19,7 @@ const statusColors: { [key: string]: string } = {
     accepted: "bg-green-500 hover:bg-green-600",
     rejected: "bg-red-500 hover:bg-red-600",
     cancelled: "bg-gray-500 hover:bg-gray-600",
+    completion_pending: "bg-purple-500 hover:bg-purple-600",
     completed: "bg-blue-500 hover:bg-blue-600",
 };
 
@@ -27,6 +28,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+    const [isCompleting, setIsCompleting] = useState(false);
 
     useEffect(() => {
         if (firestore && (booking.status === 'accepted' || booking.status === 'rejected') && !booking.statusChangeAcknowledged) {
@@ -59,6 +61,33 @@ export function BookingCard({ booking }: { booking: Booking }) {
                 description: error.message || "There was an error cancelling your booking.",
             });
             setIsCancelling(false);
+        }
+    };
+    
+    const handleWorkCompleted = async () => {
+        if (!firestore) return;
+        setIsCompleting(true);
+        const bookingRef = doc(firestore, 'bookings', booking.id);
+        try {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            await setDocumentNonBlocking(bookingRef, {
+                status: 'completion_pending',
+                completionOtp: otp,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+    
+            toast({
+                title: "Work Marked as Completed!",
+                description: "Please share the generated OTP with the equipment owner to finalize the booking.",
+                duration: 10000,
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: "Update Failed",
+                description: error.message || "Could not mark the booking as completed.",
+            });
+            setIsCompleting(false); // only reset on error
         }
     };
 
@@ -101,15 +130,31 @@ export function BookingCard({ booking }: { booking: Booking }) {
                             </p>
                         </div>
                         <div className="flex flex-col items-end gap-2 text-right">
-                            <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status}</Badge>
+                            <Badge className={`${statusColors[booking.status] || 'bg-gray-400'} text-white capitalize`}>{booking.status.replace('_', ' ')}</Badge>
                         </div>
                     </div>
-                     {booking.status === 'accepted' && booking.completionOtp && (
+                    
+                    {booking.status === 'accepted' && (
+                        <div className="mt-4 flex flex-col items-start gap-2">
+                           <Alert>
+                                <Info className="h-4 w-4" />
+                                <AlertTitle>Booking Accepted!</AlertTitle>
+                                <AlertDescription>
+                                   The equipment owner has accepted your request. Once the work is done, click the button below.
+                                </AlertDescription>
+                            </Alert>
+                            <Button onClick={handleWorkCompleted} disabled={isCompleting}>
+                                {isCompleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {isCompleting ? 'Generating OTP...' : 'Mark as Completed'}
+                            </Button>
+                        </div>
+                    )}
+                     {booking.status === 'completion_pending' && booking.completionOtp && (
                         <Alert className="mt-4 bg-blue-50 border-blue-200">
                             <Info className="h-4 w-4" />
                             <AlertTitle className="font-semibold text-blue-800">Action Required</AlertTitle>
                             <AlertDescription className="text-blue-700">
-                                Share this OTP with the owner to complete the job: <strong className="text-lg font-mono tracking-widest text-blue-900">{booking.completionOtp}</strong>
+                                Share this OTP with the owner to finalize the job: <strong className="text-lg font-mono tracking-widest text-blue-900">{booking.completionOtp}</strong>
                             </AlertDescription>
                         </Alert>
                     )}

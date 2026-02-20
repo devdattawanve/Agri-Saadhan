@@ -16,6 +16,7 @@ const statusColors: { [key: string]: string } = {
     accepted: "bg-green-500 hover:bg-green-600",
     rejected: "bg-red-500 hover:bg-red-600",
     cancelled: "bg-gray-500 hover:bg-gray-600",
+    completion_pending: "bg-purple-500 hover:bg-purple-600",
     completed: "bg-blue-500 hover:bg-blue-600",
 };
 
@@ -27,7 +28,7 @@ export function OwnerBookingHistoryCard({ booking }: { booking: Booking }) {
 
     const handleCompleteBooking = async () => {
         if (!firestore) return;
-        if (otp !== "123456") {
+        if (otp !== booking.completionOtp) {
             toast({
                 variant: "destructive",
                 title: "Invalid OTP",
@@ -41,7 +42,7 @@ export function OwnerBookingHistoryCard({ booking }: { booking: Booking }) {
         try {
             await setDocumentNonBlocking(bookingRef, { status: 'completed', updatedAt: new Date() }, { merge: true });
             toast({
-                title: "Booking Completed!",
+                title: "Work Done!",
                 description: "The booking has been marked as completed.",
             });
         } catch (error: any) {
@@ -59,14 +60,14 @@ export function OwnerBookingHistoryCard({ booking }: { booking: Booking }) {
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <CardTitle className="font-headline text-lg">{booking.equipmentName}</CardTitle>
-                    <Badge className={`${statusColors[booking.status]} text-white capitalize`}>{booking.status}</Badge>
+                    <Badge className={`${statusColors[booking.status]} text-white capitalize`}>{booking.status.replace('_', ' ')}</Badge>
                 </div>
                 <CardDescription>
                     Booked By: <span className="font-mono text-xs">{booking.farmerId.substring(0, 8)}...</span> | {booking.startDate?.toDate ? format(booking.startDate.toDate(), 'PP') : ''}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {booking.status === 'accepted' && (
+                {booking.status === 'completion_pending' && (
                     <div className="space-y-2">
                         <p className="text-sm font-medium">Enter OTP from farmer to complete the job:</p>
                         <div className="flex gap-2">
@@ -79,14 +80,19 @@ export function OwnerBookingHistoryCard({ booking }: { booking: Booking }) {
                                 className="font-mono tracking-widest"
                             />
                             <Button onClick={handleCompleteBooking} disabled={isCompleting || otp.length !== 6}>
-                                {isCompleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Complete Job"}
+                                {isCompleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Complete"}
                             </Button>
                         </div>
                     </div>
                 )}
+                {booking.status === 'accepted' && (
+                     <div className="text-center p-4 bg-muted rounded-md">
+                        <p className="font-semibold text-muted-foreground">Waiting for farmer to mark job as complete.</p>
+                    </div>
+                )}
                  {booking.status === 'completed' && (
                     <div className="text-center p-4 bg-muted rounded-md">
-                        <p className="font-semibold text-green-700">Job Completed Successfully</p>
+                        <p className="font-semibold text-green-700">Work Done</p>
                         {booking.rating ? (
                              <div className="mt-2 space-y-1">
                                 <div className="flex items-center justify-center">
