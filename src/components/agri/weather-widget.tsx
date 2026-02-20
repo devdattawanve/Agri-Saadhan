@@ -126,7 +126,7 @@ export function WeatherWidget({ cardClassName }: { cardClassName?: string }) {
                             <p className="text-sm opacity-90">Max Temp</p>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <Image src="https://image2url.com/r2/default/images/1771592111717-ac8d54f6-aee5-4fb5-b0f6-85e2ef15501b.jpeg" alt="Rain chance" width={40} height={40} className="w-10 h-10" />
+                            <Image src="https://image2url.com/r2/default/images/1771592960455-d0708820-3bea-43d6-885c-0f185f7da8a2.png" alt="Rain chance" width={40} height={40} className="w-10 h-10" />
                             <p className="font-bold text-xl">{weather.rainChance}%</p>
                             <p className="text-sm opacity-90">Rain</p>
                         </div>
