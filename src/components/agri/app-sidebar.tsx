@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Users, Home, Wrench, User as UserIcon, Tractor, CalendarCheck, ClipboardList } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 // Define the user data type inline to avoid complex imports
 interface AppUserData {
@@ -7,6 +12,24 @@ interface AppUserData {
     sahayakStatus?: 'NONE' | 'PENDING' | 'VERIFIED';
     [key: string]: any;
 }
+
+const NavLink = ({ href, icon: Icon, label, exact = false }: { href: string; icon: React.ElementType; label: string; exact?: boolean}) => {
+    const pathname = usePathname();
+    const isActive = exact ? pathname === href : pathname.startsWith(href);
+
+    return (
+        <Link
+            href={href}
+            className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                isActive && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+            )}
+        >
+            <Icon className="h-5 w-5" />
+            {label}
+        </Link>
+    );
+};
 
 export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
     const roles = userData?.roles || [];
@@ -16,8 +39,8 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
     const isSahayakVerified = userData?.sahayakStatus === 'VERIFIED';
 
     return (
-        <nav className="grid items-start text-sm font-medium">
-            <div className="mb-4">
+        <nav className="grid items-start p-2 text-sm font-medium">
+            <div className="mb-4 px-1">
                 <img
                   src="https://image2url.com/r2/default/images/1771448027626-30acbb98-1ed9-40fa-a44e-8edfcbad9400.jpeg"
                   alt="Agri Saadhan Logo"
@@ -30,68 +53,26 @@ export function AppSidebar({ userData }: { userData?: AppUserData | null }) {
                   }}
                 />
             </div>
-            <Link
-                href="/dashboard"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-                <Home className="h-4 w-4" />
-                Home
-            </Link>
-            <Link
-                href="/equipment"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-            >
-                <Tractor className="h-4 w-4" />
-                Equipment
-            </Link>
+            <NavLink href="/dashboard" icon={Home} label="Home" exact={true} />
+            <NavLink href="/equipment" icon={Tractor} label="Equipment" />
 
             {isFarmer && (
-                <Link
-                    href="/my-bookings"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
-                    <CalendarCheck className="h-4 w-4" />
-                    My Bookings
-                </Link>
+                <NavLink href="/my-bookings" icon={CalendarCheck} label="My Bookings" />
             )}
 
             {isOwner && (
                 <>
-                    <Link
-                        href="/my-equipment"
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                    >
-                        <Wrench className="h-4 w-4" />
-                        My Equipment
-                    </Link>
-                    <Link
-                        href="/owner-bookings"
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                    >
-                        <ClipboardList className="h-4 w-4" />
-                        Bookings
-                    </Link>
+                    <NavLink href="/my-equipment" icon={Wrench} label="My Equipment" />
+                    <NavLink href="/owner-bookings" icon={ClipboardList} label="Bookings" />
                 </>
             )}
 
             {isDriver && (
-                <Link
-                    href="/driver-dashboard"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
-                    <UserIcon className="h-4 w-4" />
-                    Driver Dashboard
-                </Link>
+                <NavLink href="/driver-dashboard" icon={UserIcon} label="Driver Dashboard" />
             )}
 
             {isSahayakVerified && (
-                <Link
-                    href="/sahayak"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
-                    <Users className="h-4 w-4" />
-                    Sahayak Dashboard
-                </Link>
+                <NavLink href="/sahayak" icon={Users} label="Sahayak Dashboard" />
             )}
         </nav>
     );
