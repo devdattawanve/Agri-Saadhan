@@ -85,9 +85,7 @@ service cloud.firestore {
              // Allow setting rating for the first time
             !('rating' in resource.data) &&
             // Ensure only allowed fields are being updated.
-            // This checks that no fields outside the allowed list are being changed.
-            request.resource.data.diff(resource.data).affectedKeys()
-              .difference(['rating', 'ratingDescription', 'updatedAt']).size() == 0 &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingDescription', 'updatedAt']) &&
             // Also ensure the core 'rating' field is actually part of the update.
             request.resource.data.diff(resource.data).affectedKeys().has('rating')
           )
